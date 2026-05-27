@@ -1,0 +1,17 @@
+[project]
+name = "automation-stealth"
+version = "0.1.0"
+description = "SOTA stealth browser automation with Camoufox + MCP integration"
+requires-python = ">=3.14"
+dependencies = [
+    "camoufox>=0.4.11",
+    "mcp>=1.27",
+    "trafilatura>=2.0",
+    "click>=8.0",
+    "pycookiecheat>=0.8.0",
+    "browser-cookie3>=0.20.1",
+]
+
+[project.scripts]
+stealth-browser = "cli.main:cli"
+stealth-browser-mcp = "mcp_server.server:run"
