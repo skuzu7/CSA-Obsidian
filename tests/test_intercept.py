@@ -1,6 +1,7 @@
 import asyncio
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, call
 
 
 def make_page():

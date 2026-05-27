@@ -1,5 +1,7 @@
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+
 from stealth_browser.config import BrowserConfig
 
 

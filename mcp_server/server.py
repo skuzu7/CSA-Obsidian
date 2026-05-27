@@ -36,16 +36,34 @@ def _mcp_tool(fn):
     return wrapper
 
 
+def _reset_state() -> None:
+    global _manager, _human, _last_refs
+    _manager = None
+    _human = None
+    _last_refs = []
+
+
 async def _ensure_browser() -> tuple[BrowserManager, Page, HumanBehavior]:
     global _manager, _human
     async with _lock:
-        if _manager is None:
-            cfg = BrowserConfig.from_env()
-            _manager = BrowserManager(cfg)
-            await _manager.__aenter__()
-            _human = HumanBehavior(cfg)
-    page = await _manager.get_page()
-    return _manager, page, _human
+        if _manager is not None:
+            try:
+                page = await _manager.get_page()
+                return _manager, page, _human
+            except Exception:
+                logger.warning("Browser connection is dead; recreating", exc_info=True)
+                try:
+                    await _manager.close()
+                except Exception:
+                    pass
+                _reset_state()
+
+        cfg = BrowserConfig.from_env()
+        _manager = BrowserManager(cfg)
+        await _manager.__aenter__()
+        _human = HumanBehavior(cfg)
+        page = await _manager.get_page()
+        return _manager, page, _human
 
 
 async def _auto_snapshot(page: Page) -> dict:
@@ -231,13 +249,12 @@ async def browser_load_session(name: str = "default") -> dict:
 @_mcp_tool
 async def browser_close() -> dict:
     """Close the browser and reset internal state. Use before reinitializing with different settings."""
-    global _manager, _human, _last_refs
     async with _lock:
         if _manager is not None:
-            await _manager.close()
-            _manager = None
-            _human = None
-            _last_refs = []
+            try:
+                await _manager.close()
+            finally:
+                _reset_state()
     return {"ok": True}
 
 

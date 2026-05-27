@@ -1,6 +1,6 @@
-import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 
 async def test_mcp_tool_decorator_catches_exception():
@@ -77,3 +77,46 @@ def test_resolve_ref_negative_index():
 
     with pytest.raises(RefStale):
         srv._resolve_ref(page, -1)
+
+
+def test_reset_state_clears_globals():
+    import mcp_server.server as srv
+    from stealth_browser.snapshot import RefElement
+
+    srv._manager = MagicMock()
+    srv._human = MagicMock()
+    srv._last_refs = [RefElement(index=0, role="button", label="X", tag="button", bbox=(0, 0, 1, 1))]
+
+    srv._reset_state()
+
+    assert srv._manager is None
+    assert srv._human is None
+    assert srv._last_refs == []
+
+
+async def test_ensure_browser_recreates_on_dead_connection(monkeypatch):
+    import mcp_server.server as srv
+
+    dead = AsyncMock()
+    dead.get_page = AsyncMock(side_effect=Exception("Connection closed while reading from the driver"))
+    dead.close = AsyncMock()
+    srv._manager = dead
+    srv._human = MagicMock()
+
+    fresh = AsyncMock()
+    fresh_page = MagicMock()
+    fresh.get_page = AsyncMock(return_value=fresh_page)
+    fresh.__aenter__ = AsyncMock(return_value=fresh)
+
+    monkeypatch.setattr(srv, "BrowserManager", lambda cfg: fresh)
+    monkeypatch.setattr(srv, "HumanBehavior", lambda cfg: MagicMock())
+    monkeypatch.setattr(srv.BrowserConfig, "from_env", classmethod(lambda cls: MagicMock()))
+
+    manager, page, _ = await srv._ensure_browser()
+
+    dead.close.assert_awaited_once()
+    fresh.__aenter__.assert_awaited_once()
+    assert manager is fresh
+    assert page is fresh_page
+
+    srv._reset_state()

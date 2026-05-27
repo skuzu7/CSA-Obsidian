@@ -1,10 +1,11 @@
 import base64
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 
 async def test_screenshot_b64_calls_screenshot(mock_page):
-    from stealth_browser.page_ops import screenshot_b64, screenshot
+    from stealth_browser.page_ops import screenshot_b64
 
     mock_page.screenshot = AsyncMock(return_value=b"PNG_DATA")
     result = await screenshot_b64(mock_page)
@@ -16,8 +17,9 @@ async def test_screenshot_b64_calls_screenshot(mock_page):
 
 async def test_navigate_raises_navigation_timeout(mock_page):
     from playwright.async_api import TimeoutError as PlaywrightTimeoutError
-    from stealth_browser.page_ops import navigate
+
     from stealth_browser.errors import NavigationTimeout
+    from stealth_browser.page_ops import navigate
 
     mock_page.goto = AsyncMock(side_effect=PlaywrightTimeoutError("timeout"))
 
