@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 
 import click
@@ -20,14 +21,18 @@ def cli():
 @click.option("--profile", default="default")
 @click.option("--screenshot", is_flag=True)
 def open_page(url: str, profile: str, screenshot: bool):
-    asyncio.run(_open_page(url, profile, screenshot))
+    try:
+        asyncio.run(_open_page(url, profile, screenshot))
+    except Exception as e:
+        click.echo(f"Erro: {e}", err=True)
+        raise SystemExit(1)
 
 
 async def _open_page(url: str, profile: str, screenshot: bool):
     from stealth_browser.snapshot import take_snapshot
     from stealth_browser.page_ops import navigate
 
-    cfg = BrowserConfig(profile_dir=Path(f"profiles/{profile}"))
+    cfg = BrowserConfig(profile_dir=Path.home() / ".automation-stealth" / "profiles" / profile)
     async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         await navigate(page, url)
@@ -43,13 +48,17 @@ async def _open_page(url: str, profile: str, screenshot: bool):
 @click.option("--profile", default="default")
 @click.option("--timeout", default=60.0, type=float)
 def binance_tokens(profile: str, timeout: float):
-    asyncio.run(_binance_tokens(profile, timeout))
+    try:
+        asyncio.run(_binance_tokens(profile, timeout))
+    except Exception as e:
+        click.echo(f"Erro: {e}", err=True)
+        raise SystemExit(1)
 
 
 async def _binance_tokens(profile: str, timeout: float):
     from tasks.trading.binance import BinanceTokenTask
 
-    cfg = BrowserConfig(profile_dir=Path(f"profiles/{profile}"))
+    cfg = BrowserConfig(profile_dir=Path.home() / ".automation-stealth" / "profiles" / profile)
     async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         human = HumanBehavior(cfg)
@@ -66,19 +75,23 @@ async def _binance_tokens(profile: str, timeout: float):
 @click.option("--interval", default=60.0, type=float)
 @click.option("--checks", default=10, type=int)
 def monitor(url: str, profile: str, interval: float, checks: int):
-    asyncio.run(_monitor(url, profile, interval, checks))
+    try:
+        asyncio.run(_monitor(url, profile, interval, checks))
+    except Exception as e:
+        click.echo(f"Erro: {e}", err=True)
+        raise SystemExit(1)
 
 
 async def _monitor(url: str, profile: str, interval: float, checks: int):
     from tasks.scraping.monitor import PageMonitorTask
 
-    cfg = BrowserConfig(profile_dir=Path(f"profiles/{profile}"))
+    cfg = BrowserConfig(profile_dir=Path.home() / ".automation-stealth" / "profiles" / profile)
     async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         human = HumanBehavior(cfg)
         task = PageMonitorTask(page, human, cfg)
         result = await task.run(url=url, interval=interval, max_checks=checks)
-        click.echo(result)
+        click.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
