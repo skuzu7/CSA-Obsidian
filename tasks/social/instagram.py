@@ -4,5 +4,7 @@ from tasks.base import BaseTask
 
 
 class InstagramTask(BaseTask):
+    """Placeholder — not yet implemented."""
+
     async def run(self, **kwargs) -> dict:
-        raise NotImplementedError("Instagram task module not yet implemented")
+        raise NotImplementedError("InstagramTask is not implemented yet")
