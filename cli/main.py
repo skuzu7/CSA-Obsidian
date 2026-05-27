@@ -29,8 +29,8 @@ def open_page(url: str, profile: str, screenshot: bool):
 
 
 async def _open_page(url: str, profile: str, screenshot: bool):
-    from stealth_browser.snapshot import take_snapshot
     from stealth_browser.page_ops import navigate
+    from stealth_browser.snapshot import take_snapshot
 
     cfg = BrowserConfig(profile_dir=Path.home() / ".automation-stealth" / "profiles" / profile)
     async with BrowserManager(cfg) as bm:
