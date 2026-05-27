@@ -1,7 +1,4 @@
-import json
-import pytest
-from stealth_browser.snapshot import PageSnapshot, RefElement, SNAPSHOT_JS
-from stealth_browser.errors import SnapshotError
+from stealth_browser.snapshot import SNAPSHOT_JS, PageSnapshot, RefElement
 
 
 def make_snapshot(refs=None, markdown="Hello world"):

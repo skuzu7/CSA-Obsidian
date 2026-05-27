@@ -1,5 +1,5 @@
-import os
 import pytest
+
 from stealth_browser.config import BrowserConfig
 
 

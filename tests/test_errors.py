@@ -1,8 +1,15 @@
-import pytest
 from stealth_browser.errors import (
-    AutomationError, BrowserError, BrowserLaunchError, CookieImportError,
-    ElementNotFound, JavaScriptError, NavigationTimeout, PageCrashed,
-    RefStale, SessionExpired, SnapshotError,
+    AutomationError,
+    BrowserError,
+    BrowserLaunchError,
+    CookieImportError,
+    ElementNotFound,
+    JavaScriptError,
+    NavigationTimeout,
+    PageCrashed,
+    RefStale,
+    SessionExpired,
+    SnapshotError,
 )
 
 
