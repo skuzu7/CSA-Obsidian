@@ -4,10 +4,11 @@ import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-
-_PROJECT_DIR = Path(__file__).resolve().parent.parent
+from typing import Any
 
 logger = logging.getLogger(__name__)
+
+_PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 
 def _load_dotenv() -> None:
@@ -19,9 +20,6 @@ def _load_dotenv() -> None:
         if "=" in line and not line.startswith("#"):
             key, val = line.split("=", 1)
             os.environ.setdefault(key.strip(), val.strip())
-
-
-_load_dotenv()
 
 
 @dataclass
@@ -51,7 +49,7 @@ class BrowserConfig:
     @classmethod
     def from_env(cls) -> BrowserConfig:
         _load_dotenv()
-        kwargs: dict = {}
+        kwargs: dict[str, Any] = {}
         if v := os.environ.get("STEALTH_PROFILE_DIR"):
             kwargs["profile_dir"] = Path(v) if Path(v).is_absolute() else _PROJECT_DIR / v
         if v := os.environ.get("STEALTH_LOCALE"):

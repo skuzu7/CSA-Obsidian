@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import collections
 import fnmatch
 import logging
-from typing import Any
 
 from playwright.async_api import Page, Request
 
@@ -20,7 +20,7 @@ class RequestInterceptor:
         self._page = page
         self._url_pattern = url_pattern
         self._header_names = [h.lower() for h in header_names] if header_names else None
-        self.captured: list[dict] = []
+        self.captured: collections.deque[dict] = collections.deque(maxlen=500)
         self._event = asyncio.Event()
 
     def _on_request(self, request: Request) -> None:
@@ -41,6 +41,13 @@ class RequestInterceptor:
     def detach(self) -> None:
         self._page.remove_listener("request", self._on_request)
 
+    async def __aenter__(self) -> RequestInterceptor:
+        self.attach()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.detach()
+
     async def wait_for_header(self, header_name: str, timeout: float = 30.0) -> str:
         needle = header_name.lower()
         try:
@@ -50,7 +57,10 @@ class RequestInterceptor:
                         for k, v in record["headers"].items():
                             if k.lower() == needle:
                                 return v
+                    snapshot_len = len(self.captured)
                     self._event.clear()
+                    if len(self.captured) > snapshot_len:
+                        continue
                     await self._event.wait()
         except TimeoutError:
             logger.warning("Header '%s' not captured within %ss", header_name, timeout)

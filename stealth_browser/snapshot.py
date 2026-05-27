@@ -40,7 +40,7 @@ SNAPSHOT_JS = """
 
     if (label.length > 80) label = label.slice(0, 80);
 
-    const key = `${role}:${label}`;
+    const key = `${role}:${label}:${Math.round(r.x)}:${Math.round(r.y)}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
@@ -86,12 +86,12 @@ class PageSnapshot:
             "screenshot_b64": self.screenshot_b64,
         }
 
-    def to_llm_text(self) -> str:
+    def to_llm_text(self, max_chars: int = 3000) -> str:
         lines = [f"Page: {self.title} ({self.url})", "", "Interactive elements:"]
         for r in self.refs:
             lines.append(f'[{r.index}] {r.role} "{r.label}"')
         if self.markdown:
-            lines.extend(["", "Content:", self.markdown[:3000]])
+            lines.extend(["", "Content:", self.markdown[:max_chars]])
         return "\n".join(lines)
 
 
@@ -102,7 +102,11 @@ async def take_snapshot(
 ) -> PageSnapshot:
     logger.debug("Taking snapshot of %s", page.url)
     raw = await page.evaluate(SNAPSHOT_JS)
-    items = json.loads(raw)
+    try:
+        items = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        from stealth_browser.errors import SnapshotError
+        raise SnapshotError(f"Invalid JSON from snapshot JS: {exc}") from exc
     refs = [
         RefElement(
             index=el["index"],

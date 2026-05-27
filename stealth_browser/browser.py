@@ -15,6 +15,7 @@ class BrowserManager:
         self._config = config or BrowserConfig()
         self._cfx: AsyncCamoufox | None = None
         self._context: BrowserContext | None = None
+        self._chrome_cookies: list[dict] = []
 
     async def __aenter__(self) -> BrowserManager:
         cfg = self._config
@@ -44,15 +45,19 @@ class BrowserManager:
         self._context = await self._cfx.__aenter__()
         logger.info("Browser started")
 
-        if self._chrome_cookies:
-            await self._context.add_cookies(self._chrome_cookies)
-            logger.info("Loaded %d Chrome cookies", len(self._chrome_cookies))
+        try:
+            if self._chrome_cookies:
+                await self._context.add_cookies(self._chrome_cookies)
+                logger.info("Loaded %d Chrome cookies", len(self._chrome_cookies))
+        except Exception:
+            await self._cfx.__aexit__(None, None, None)
+            raise
 
         return self
 
-    async def __aexit__(self, *args) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         logger.debug("BrowserManager closing")
-        await self._cfx.__aexit__(*args)
+        await self._cfx.__aexit__(exc_type, exc_val, exc_tb)
 
     @property
     def context(self) -> BrowserContext:
@@ -70,5 +75,4 @@ class BrowserManager:
         return await self.context.new_page()
 
     async def close(self) -> None:
-        if self._cfx is not None:
-            await self._cfx.__aexit__(None, None, None)
+        await self.__aexit__(None, None, None)

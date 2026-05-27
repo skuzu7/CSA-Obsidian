@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def save_cookies(page: Page, path: Path) -> None:
     cookies = await page.context.cookies()
-    path.write_text(json.dumps(cookies, indent=2))
+    path.write_text(json.dumps(cookies, indent=2), encoding="utf-8")
     logger.debug("Saved %d cookies to %s", len(cookies), path)
 
 
@@ -20,7 +20,7 @@ async def load_cookies(page: Page, path: Path) -> None:
     if not path.exists():
         logger.debug("Cookie file not found: %s", path)
         return
-    cookies = json.loads(path.read_text())
+    cookies = json.loads(path.read_text(encoding="utf-8"))
     await page.context.add_cookies(cookies)
     logger.debug("Loaded %d cookies from %s", len(cookies), path)
 
