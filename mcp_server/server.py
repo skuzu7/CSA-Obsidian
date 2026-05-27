@@ -208,8 +208,7 @@ async def browser_evaluate(js: str) -> dict:
 @_mcp_tool
 async def browser_save_session(name: str = "default") -> dict:
     """Save current browser cookies to a named session file for later restoration."""
-    async with _lock:
-        _, page, _ = await _ensure_browser()
+    _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = cfg.profile_dir.parent / name / "cookies.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,8 +220,7 @@ async def browser_save_session(name: str = "default") -> dict:
 @_mcp_tool
 async def browser_load_session(name: str = "default") -> dict:
     """Load cookies from a previously saved named session into the current browser context."""
-    async with _lock:
-        _, page, _ = await _ensure_browser()
+    _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = cfg.profile_dir.parent / name / "cookies.json"
     await load_cookies(page, path)
