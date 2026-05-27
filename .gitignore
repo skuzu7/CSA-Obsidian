@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Browser profiles (runtime cache, cookies, state)
+profiles/
+
+# Test / coverage artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
