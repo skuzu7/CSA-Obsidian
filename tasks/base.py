@@ -6,8 +6,8 @@ from playwright.async_api import Page
 
 from stealth_browser.config import BrowserConfig
 from stealth_browser.humanize import HumanBehavior
-from stealth_browser.snapshot import PageSnapshot, take_snapshot
 from stealth_browser.page_ops import navigate
+from stealth_browser.snapshot import PageSnapshot, take_snapshot
 
 
 class BaseTask(ABC):

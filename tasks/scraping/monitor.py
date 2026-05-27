@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 
-from stealth_browser.page_ops import navigate, extract_text
+from stealth_browser.page_ops import extract_text, navigate
 from tasks.base import BaseTask
 
 

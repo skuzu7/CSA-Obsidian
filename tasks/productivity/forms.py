@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from stealth_browser.page_ops import navigate, fill
+from stealth_browser.page_ops import fill, navigate
 from tasks.base import BaseTask
 
 
