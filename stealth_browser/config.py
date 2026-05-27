@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
 _PROJECT_DIR = Path(__file__).resolve().parent.parent
+
+logger = logging.getLogger(__name__)
 
 
 def _load_dotenv() -> None:
@@ -74,4 +77,6 @@ class BrowserConfig:
             kwargs["import_chrome_cookies"] = v.lower() in ("true", "1", "yes")
         if v := os.environ.get("STEALTH_CHROME_COOKIE_TTL"):
             kwargs["chrome_cookie_ttl"] = int(v)
-        return cls(**kwargs)
+        cfg = cls(**kwargs)
+        logger.debug("BrowserConfig loaded from env: headless=%s, profile=%s", cfg.headless, cfg.profile_dir)
+        return cfg

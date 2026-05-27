@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import BrowserContext, Page
 
 from stealth_browser.config import BrowserConfig
+
+logger = logging.getLogger(__name__)
 
 
 class BrowserManager:
@@ -14,6 +18,7 @@ class BrowserManager:
 
     async def __aenter__(self) -> BrowserManager:
         cfg = self._config
+        logger.debug("BrowserManager starting, profile=%s", cfg.profile_dir)
 
         if cfg.import_chrome_cookies:
             from stealth_browser.chrome_import import extract_chrome_cookies
@@ -37,13 +42,16 @@ class BrowserManager:
             enable_cache=cfg.enable_cache,
         )
         self._context = await self._cfx.__aenter__()
+        logger.info("Browser started")
 
         if self._chrome_cookies:
             await self._context.add_cookies(self._chrome_cookies)
+            logger.info("Loaded %d Chrome cookies", len(self._chrome_cookies))
 
         return self
 
     async def __aexit__(self, *args) -> None:
+        logger.debug("BrowserManager closing")
         await self._cfx.__aexit__(*args)
 
     @property

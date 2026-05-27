@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 from playwright.async_api import Page, Locator
 
 from stealth_browser.browser import BrowserManager
@@ -56,11 +59,13 @@ def _resolve_ref(page: Page, ref: int) -> Locator:
 
 @mcp.tool()
 async def browser_open(url: str) -> dict:
+    logger.debug("Tool called: browser_open url=%s", url)
     try:
         _, page, _ = await _ensure_browser()
         await page.goto(url)
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_open failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -73,6 +78,7 @@ async def browser_snapshot(include_screenshot: bool = False) -> dict:
         _last_refs = snap.refs
         return snap.to_dict()
     except Exception as e:
+        logger.error("browser_snapshot failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -82,6 +88,7 @@ async def browser_screenshot() -> dict:
         _, page, _ = await _ensure_browser()
         return {"image": await screenshot_b64(page)}
     except Exception as e:
+        logger.error("browser_screenshot failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -93,6 +100,7 @@ async def browser_navigate_back() -> dict:
         snap = await _auto_snapshot(page)
         return {"url": page.url, "title": await page.title(), "snapshot": snap}
     except Exception as e:
+        logger.error("browser_navigate_back failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -103,6 +111,7 @@ async def browser_refresh() -> dict:
         await page.reload()
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_refresh failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -114,6 +123,7 @@ async def browser_click(ref: int) -> dict:
         await human.click(page, locator)
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_click failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -128,6 +138,7 @@ async def browser_type(ref: int, text: str, clear_first: bool = True) -> dict:
         await human.type_text(page, text)
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_type failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -139,6 +150,7 @@ async def browser_select(ref: int, value: str) -> dict:
         await locator.select_option(value)
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_select failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -150,6 +162,7 @@ async def browser_hover(ref: int) -> dict:
         await human.hover(page, locator)
         return await _auto_snapshot(page)
     except Exception as e:
+        logger.error("browser_hover failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -161,6 +174,7 @@ async def browser_scroll(direction: str = "down", pixels: int = 300) -> dict:
         await human.scroll(page, delta)
         return {"ok": True}
     except Exception as e:
+        logger.error("browser_scroll failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -171,6 +185,7 @@ async def browser_press_key(key: str) -> dict:
         await page.keyboard.press(key)
         return {"ok": True}
     except Exception as e:
+        logger.error("browser_press_key failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -181,6 +196,7 @@ async def browser_get_text() -> dict:
         text = await extract_text(page)
         return {"markdown": text}
     except Exception as e:
+        logger.error("browser_get_text failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -191,6 +207,7 @@ async def browser_get_cookies() -> dict:
         cookies = await get_cookies(page)
         return {"cookies": cookies}
     except Exception as e:
+        logger.error("browser_get_cookies failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -201,6 +218,7 @@ async def browser_evaluate(js: str) -> dict:
         result = await evaluate(page, js)
         return {"result": result}
     except Exception as e:
+        logger.error("browser_evaluate failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -213,6 +231,7 @@ async def browser_save_session(name: str = "default") -> dict:
         await save_cookies(page, path)
         return {"path": str(path)}
     except Exception as e:
+        logger.error("browser_save_session failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 
@@ -224,6 +243,7 @@ async def browser_load_session(name: str = "default") -> dict:
         await load_cookies(page, path)
         return {"ok": True}
     except Exception as e:
+        logger.error("browser_load_session failed: %s", e)
         return {"error": str(e), "type": type(e).__name__}
 
 

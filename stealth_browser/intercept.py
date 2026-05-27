@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
+import logging
 from typing import Any
 
 from playwright.async_api import Page, Request
+
+logger = logging.getLogger(__name__)
 
 
 class RequestInterceptor:
@@ -28,6 +31,7 @@ class RequestInterceptor:
             headers_lower = {k.lower() for k in headers}
             if not any(name in headers_lower for name in self._header_names):
                 return
+        logger.debug("Captured request: %s", request.url)
         self.captured.append({"url": request.url, "method": request.method, "headers": headers})
         self._event.set()
 
@@ -49,4 +53,5 @@ class RequestInterceptor:
                     self._event.clear()
                     await self._event.wait()
         except TimeoutError:
+            logger.warning("Header '%s' not captured within %ss", header_name, timeout)
             raise TimeoutError(f"Header {header_name} not captured within {timeout}s")
