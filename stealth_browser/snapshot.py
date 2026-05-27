@@ -3,10 +3,13 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 from dataclasses import dataclass
 
 import trafilatura
 from playwright.async_api import Page
+
+logger = logging.getLogger(__name__)
 
 SNAPSHOT_JS = """
 (() => {
@@ -97,6 +100,7 @@ async def take_snapshot(
     include_screenshot: bool = False,
     include_markdown: bool = True,
 ) -> PageSnapshot:
+    logger.debug("Taking snapshot of %s", page.url)
     raw = await page.evaluate(SNAPSHOT_JS)
     items = json.loads(raw)
     refs = [
@@ -120,6 +124,7 @@ async def take_snapshot(
         png_bytes = await page.screenshot()
         screenshot_b64 = base64.b64encode(png_bytes).decode()
 
+    logger.info("Snapshot: %d refs, markdown=%d chars", len(refs), len(markdown))
     return PageSnapshot(
         url=page.url,
         title=await page.title(),

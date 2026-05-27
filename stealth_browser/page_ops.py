@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
 from typing import Any
 
 import trafilatura
@@ -10,12 +11,16 @@ from playwright.async_api import Locator, Page
 from stealth_browser.errors import NavigationTimeout, ElementNotFound
 from stealth_browser.humanize import HumanBehavior
 
+logger = logging.getLogger(__name__)
+
 
 async def navigate(page: Page, url: str, wait_until: str = "domcontentloaded") -> None:
+    logger.debug("navigate → %s", url)
     try:
         await page.goto(url, wait_until=wait_until)
     except Exception as exc:
         if "Timeout" in type(exc).__name__:
+            logger.warning("Navigation timeout: %s", url)
             raise NavigationTimeout(url) from exc
         raise
 
