@@ -7,19 +7,20 @@ from typing import Any
 
 import trafilatura
 from playwright.async_api import Locator, Page
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from stealth_browser.errors import NavigationTimeout, ElementNotFound
+from stealth_browser.errors import ElementNotFound, NavigationTimeout
 from stealth_browser.humanize import HumanBehavior
 
 logger = logging.getLogger(__name__)
 
 
-async def navigate(page: Page, url: str, wait_until: str = "domcontentloaded") -> None:
+async def navigate(page: Page, url: str, wait_until: str = "domcontentloaded", timeout: int = 30_000) -> None:
     logger.debug("navigate → %s", url)
     try:
-        await page.goto(url, wait_until=wait_until)
+        await page.goto(url, wait_until=wait_until, timeout=timeout)
     except Exception as exc:
-        if "Timeout" in type(exc).__name__:
+        if isinstance(exc, PlaywrightTimeoutError):
             logger.warning("Navigation timeout: %s", url)
             raise NavigationTimeout(url) from exc
         raise
@@ -30,7 +31,7 @@ async def wait_for_selector(page: Page, selector: str, timeout: int = 10000) -> 
     try:
         await locator.wait_for(timeout=timeout)
     except Exception as exc:
-        if "Timeout" in type(exc).__name__:
+        if isinstance(exc, PlaywrightTimeoutError):
             raise ElementNotFound(selector) from exc
         raise
     return locator
@@ -41,7 +42,7 @@ async def screenshot(page: Page) -> bytes:
 
 
 async def screenshot_b64(page: Page) -> str:
-    return base64.b64encode(await page.screenshot()).decode()
+    return base64.b64encode(await screenshot(page)).decode()
 
 
 async def extract_text(page: Page) -> str:

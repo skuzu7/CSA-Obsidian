@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import math
 import random
 
 from playwright.async_api import Locator, Page
 
 from stealth_browser.config import BrowserConfig
+from stealth_browser.errors import ElementNotFound
+
+logger = logging.getLogger(__name__)
 
 
 class HumanBehavior:
@@ -53,7 +57,11 @@ class HumanBehavior:
 
     async def drag(self, page: Page, source: Locator, target: Locator) -> None:
         src_box = await source.bounding_box()
+        if src_box is None:
+            raise ElementNotFound("source element")
         tgt_box = await target.bounding_box()
+        if tgt_box is None:
+            raise ElementNotFound("target element")
         sx = src_box["x"] + src_box["width"] / 2
         sy = src_box["y"] + src_box["height"] / 2
         tx = tgt_box["x"] + tgt_box["width"] / 2
@@ -61,5 +69,12 @@ class HumanBehavior:
         await page.mouse.move(sx, sy)
         await page.mouse.down()
         await asyncio.sleep(max(0.05, random.gauss(0.1, 0.03)))
+        steps = 8
+        for step in range(1, steps + 1):
+            t = step / steps
+            ix = sx + (tx - sx) * t + random.gauss(0, 2)
+            iy = sy + (ty - sy) * t + random.gauss(0, 2)
+            await page.mouse.move(ix, iy)
+            await asyncio.sleep(max(0.0, random.gauss(0.02, 0.005)))
         await page.mouse.move(tx, ty)
         await page.mouse.up()
