@@ -11,6 +11,10 @@ wheels/
 
 # Browser profiles (runtime cache, cookies, state)
 profiles/
+chrome_cookies.json
+cookies_copy.db
+*.sqlite-wal
+*.sqlite-shm
 
 # Test / coverage artifacts
 .coverage

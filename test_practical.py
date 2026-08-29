@@ -6,10 +6,10 @@ from pathlib import Path
 from stealth_browser.browser import BrowserManager
 from stealth_browser.config import BrowserConfig
 from stealth_browser.humanize import HumanBehavior
-from stealth_browser.snapshot import take_snapshot
-from stealth_browser.page_ops import navigate, extract_text
 from stealth_browser.intercept import RequestInterceptor
-from stealth_browser.session import save_cookies, load_cookies
+from stealth_browser.page_ops import extract_text, navigate
+from stealth_browser.session import load_cookies, save_cookies
+from stealth_browser.snapshot import take_snapshot
 
 PASS = "\033[92mPASS\033[0m"
 FAIL = "\033[91mFAIL\033[0m"

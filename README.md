@@ -2,15 +2,17 @@
 
 # 🦊 automation-stealth
 
-### Undetectable browser automation that an LLM can actually drive.
+### Browser automation that an LLM can drive and a reviewer can test.
 
-Camoufox-powered stealth + a full **MCP server** = give Claude (or any LLM) real hands on a real browser, with human-like behavior that sails past bot detection.
+Camoufox-powered automation plus a full **MCP server** for QA, accessibility,
+browser compatibility, and agent evaluation in systems the operator owns or is
+authorized to test.
 
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Built on Camoufox](https://img.shields.io/badge/stealth-Camoufox-orange.svg)](https://github.com/daijro/camoufox)
 [![MCP](https://img.shields.io/badge/MCP-17_tools-8A2BE2.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-61_passing-brightgreen.svg)](#-tests)
+[![Tests](https:/...[truncated]
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](CONTRIBUTING.md)
 
 </div>
@@ -19,16 +21,18 @@ Camoufox-powered stealth + a full **MCP server** = give Claude (or any LLM) real
 
 ## ⚡ Why this exists
 
-Most automation gets flagged the second it loads: `navigator.webdriver`, canvas hashes, robotic mouse paths, instant typing. `automation-stealth` fixes all of that **and** wraps it in a [Model Context Protocol](https://modelcontextprotocol.io/) server, so an LLM can navigate, click, type, and scrape — behaving like a human the whole way.
-
-> **Real demo:** we pointed Claude at this framework and told it to take the *Anthropic Academy "Claude 101"* certification quiz on a live, login-gated site. It navigated there, read each question, and scored **10/10 (100%)** — driving a real browser end-to-end, undetected. 🎓
+Browser compatibility checks often need realistic input timing, persistent
+sessions, and an inspectable control surface. `automation-stealth` combines
+those primitives with a [Model Context Protocol](https://modelcontextprotocol.io/)
+server so an LLM can navigate, click, type, and collect test evidence in a
+controlled browser profile.
 
 ## ✨ Features
 
 - 🕵️ **True stealth** — [Camoufox](https://github.com/daijro/camoufox) (hardened Firefox) spoofs canvas, WebGL, fonts, and `navigator` properties; removes automation flags; blocks WebRTC IP leaks.
 - 🧠 **LLM-native** — a **17-tool MCP server** turns any MCP client (Claude Code, Claude Desktop, …) into a browser operator. Snapshots return indexed, clickable elements an LLM can reason about.
 - 🤚 **Human behavior** — Gaussian typing cadence, multi-step scroll inertia, and **interpolated mouse drags with jitter** — no teleporting cursors.
-- 🍪 **Sessions that persist** — save/restore cookies + `localStorage`, persistent profiles, optional Chrome cookie import via CDP (bypasses v20 app-bound encryption).
+- 🍪 **Sessions that persist** — save/restore cookies + `localStorage`, persistent profiles, and optional import from a browser profile controlled by the operator. Session exports and cookie databases must never be committed.
 - 🧰 **Three ways in** — a `stealth-browser` CLI, the MCP server, or a clean async Python API.
 - 🌐 **Proxy & locale aware** — authenticated proxies, OS/locale spoofing, configurable window size.
 
@@ -167,13 +171,17 @@ automation-stealth/
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Run `ruff check .` and `pytest` before opening one.
 
-## ⚖️ Responsible use
+## 🔐 Security boundaries
 
-Built for legitimate automation: QA, end-to-end testing, accessibility audits, personal data collection, and LLM agents acting on your behalf. **Respect each site's Terms of Service, `robots.txt`, and applicable law.** You are responsible for how you use it.
+Use this project only with accounts, browser profiles, and systems owned by the
+operator or covered by explicit testing authorization. Keep generated profiles,
+cookie exports, session files, and credentials outside version control. Review
+all agent actions before they affect external state, and use redacted fixtures
+for tests and bug reports.
 
 ## 📜 License
 
-[MIT](LICENSE) © Anton ([@skuzu7](https://github.com/skuzu7))
+[MIT](LICENSE) © Antonio Caetano ([@skuzu7](https://github.com/skuzu7))
 
 <div align="center">
 

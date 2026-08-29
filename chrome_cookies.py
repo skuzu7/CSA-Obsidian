@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import base64
 import json
-import shutil
 import sqlite3
 import tempfile
 from pathlib import Path

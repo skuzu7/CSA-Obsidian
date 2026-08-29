@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "automation-stealth"
 version = "0.1.0"
@@ -6,7 +10,7 @@ license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "camoufox>=0.4.11",
-    "mcp>=1.27",
+    "mcp>=1.27,<2",
     "trafilatura>=2.0",
     "click>=8.0",
     "pycookiecheat>=0.8.0",
@@ -14,13 +18,13 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/anton/automation-stealth"
+Repository = "https://github.com/skuzu7/CSA-Obsidian"
 
 [project.scripts]
 stealth-browser = "cli.main:cli"
 stealth-browser-mcp = "mcp_server.server:run"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
@@ -49,3 +53,7 @@ ignore = ["E501"]
 python_version = "3.11"
 strict = false
 ignore_missing_imports = true
+
+[tool.setuptools.packages.find]
+include = ["stealth_browser*", "mcp_server*", "cli*", "tasks*"]
+exclude = ["tests*"]
