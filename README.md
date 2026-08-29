@@ -12,7 +12,8 @@ authorized to test.
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Built on Camoufox](https://img.shields.io/badge/stealth-Camoufox-orange.svg)](https://github.com/daijro/camoufox)
 [![MCP](https://img.shields.io/badge/MCP-17_tools-8A2BE2.svg)](https://modelcontextprotocol.io/)
-[![Tests](https:/...[truncated]
+[![CI & Python Tests](https://github.com/skuzu7/CSA-Obsidian/actions/workflows/ci.yml/badge.svg)](https://github.com/skuzu7/CSA-Obsidian/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-63_passing-brightgreen.svg)](#-tests)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](CONTRIBUTING.md)
 
 </div>
@@ -152,7 +153,7 @@ pip install -e ".[dev]"
 pytest --cov --cov-report=term-missing -q
 ```
 
-**61 tests**, covering errors, config, snapshot, request interception, the MCP layer, and page ops. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full design.
+**63 tests**, covering errors, config, snapshot, request interception, the MCP layer, and page ops. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md) for the full design.
 
 ## 🗂️ Project structure
 
@@ -163,7 +164,9 @@ automation-stealth/
 ├── cli/                # Click CLI (open-page, monitor, binance-tokens)
 ├── tasks/              # BinanceTokenTask, PageMonitorTask, FormFillTask
 ├── tests/              # pytest suite (asyncio)
-├── docs/ARCHITECTURE.md
+├── docs/
+│   ├── ARCHITECTURE.md
+│   └── SECURITY_ARCHITECTURE.md
 └── pyproject.toml
 ```
 
