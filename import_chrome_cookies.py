@@ -8,7 +8,7 @@ from stealth_browser.config import BrowserConfig
 
 
 async def main():
-    cookies = extract(Path("chrome_cookies.json"))
+    cookies = extract()
     print(f"\n{len(cookies)} cookies extraídos do Chrome.")
 
     cfg = BrowserConfig(profile_dir=Path("profiles/linkedin"))
