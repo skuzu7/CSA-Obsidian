@@ -1,7 +1,7 @@
 """Cookie material must never hit disk without explicit opt-in."""
+import json
 import os
 import stat
-import json
 
 import pytest
 
