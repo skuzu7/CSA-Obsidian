@@ -3,6 +3,7 @@
 Launches Chrome headless with the user's real profile, connects via CDP,
 and extracts all cookies already decrypted — bypasses v20 app-bound encryption.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -15,8 +16,16 @@ from pathlib import Path
 from urllib.request import urlopen
 
 _CHROME_CANDIDATES = [
-    Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "Google" / "Chrome" / "Application" / "chrome.exe",
-    Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")) / "Google" / "Chrome" / "Application" / "chrome.exe",
+    Path(os.environ.get("PROGRAMFILES", r"C:\Program Files"))
+    / "Google"
+    / "Chrome"
+    / "Application"
+    / "chrome.exe",
+    Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)"))
+    / "Google"
+    / "Chrome"
+    / "Application"
+    / "chrome.exe",
     Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "Application" / "chrome.exe",
 ]
 
@@ -41,7 +50,8 @@ def _free_port() -> int:
 def _is_chrome_running() -> bool:
     r = subprocess.run(
         ["tasklist", "/FI", "IMAGENAME eq chrome.exe", "/FO", "CSV", "/NH"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     return "chrome.exe" in r.stdout.lower()
 
@@ -78,16 +88,18 @@ def _cdp_to_playwright(cdp_cookies: list[dict]) -> list[dict]:
         same_site = c.get("sameSite", "None")
         if same_site not in ("Strict", "Lax", "None"):
             same_site = "None"
-        pw.append({
-            "name": c["name"],
-            "value": c["value"],
-            "domain": c.get("domain", ""),
-            "path": c.get("path", "/"),
-            "expires": c.get("expires", -1),
-            "httpOnly": c.get("httpOnly", False),
-            "secure": c.get("secure", False),
-            "sameSite": same_site,
-        })
+        pw.append(
+            {
+                "name": c["name"],
+                "value": c["value"],
+                "domain": c.get("domain", ""),
+                "path": c.get("path", "/"),
+                "expires": c.get("expires", -1),
+                "httpOnly": c.get("httpOnly", False),
+                "secure": c.get("secure", False),
+                "sameSite": same_site,
+            }
+        )
     return pw
 
 
@@ -104,7 +116,8 @@ def _read_cache(cache_dir: Path, ttl: int) -> list[dict] | None:
 def _write_cache(cache_dir: Path, cookies: list[dict]) -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     (cache_dir / CACHE_FILENAME).write_text(
-        json.dumps(cookies, ensure_ascii=False), encoding="utf-8",
+        json.dumps(cookies, ensure_ascii=False),
+        encoding="utf-8",
     )
 
 
@@ -150,6 +163,7 @@ async def extract_chrome_cookies(
         await _wait_cdp_ready(port)
 
         from playwright.async_api import async_playwright
+
         async with async_playwright() as p:
             browser = await p.chromium.connect_over_cdp(f"http://127.0.0.1:{port}")
             try:

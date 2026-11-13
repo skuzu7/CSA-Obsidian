@@ -222,10 +222,10 @@ O servidor MCP expõe 17 tools via `FastMCP("stealth-browser")`, permitindo que 
 ### Estado global do servidor
 
 ```python
-_manager: BrowserManager | None   # instância singleton do browser
-_human: HumanBehavior | None       # instância singleton do humanizador
-_last_refs: list[RefElement]       # refs do último snapshot
-_lock: asyncio.Lock                # lock global de concorrência
+_manager: BrowserManager | None  # instância singleton do browser
+_human: HumanBehavior | None  # instância singleton do humanizador
+_last_refs: list[RefElement]  # refs do último snapshot
+_lock: asyncio.Lock  # lock global de concorrência
 ```
 
 O browser é inicializado sob demanda na primeira chamada via `_ensure_browser()`, que adquire `_lock` antes de verificar e instanciar.

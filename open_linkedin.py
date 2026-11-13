@@ -1,4 +1,5 @@
 """Open LinkedIn in stealth browser and keep it open for interactive use."""
+
 import asyncio
 from pathlib import Path
 

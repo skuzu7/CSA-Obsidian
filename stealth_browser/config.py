@@ -64,7 +64,11 @@ class BrowserConfig:
         if v := os.environ.get("STEALTH_BLOCK_WEBRTC"):
             kwargs["block_webrtc"] = v.lower() in ("true", "1", "yes")
         if v := os.environ.get("STEALTH_HUMANIZE"):
-            kwargs["humanize"] = v.lower() in ("true", "1", "yes") if v.lower() in ("true", "false", "1", "0", "yes", "no") else float(v)
+            kwargs["humanize"] = (
+                v.lower() in ("true", "1", "yes")
+                if v.lower() in ("true", "false", "1", "0", "yes", "no")
+                else float(v)
+            )
         if v := os.environ.get("STEALTH_PROXY_SERVER"):
             kwargs["proxy"] = {"server": v}
             if u := os.environ.get("STEALTH_PROXY_USERNAME"):
@@ -76,5 +80,7 @@ class BrowserConfig:
         if v := os.environ.get("STEALTH_CHROME_COOKIE_TTL"):
             kwargs["chrome_cookie_ttl"] = int(v)
         cfg = cls(**kwargs)
-        logger.debug("BrowserConfig loaded from env: headless=%s, profile=%s", cfg.headless, cfg.profile_dir)
+        logger.debug(
+            "BrowserConfig loaded from env: headless=%s, profile=%s", cfg.headless, cfg.profile_dir
+        )
         return cfg

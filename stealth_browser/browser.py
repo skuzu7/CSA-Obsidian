@@ -23,6 +23,7 @@ class BrowserManager:
 
         if cfg.import_chrome_cookies:
             from stealth_browser.chrome_import import extract_chrome_cookies
+
             self._chrome_cookies = await extract_chrome_cookies(
                 cache_dir=cfg.profile_dir,
                 cache_ttl=cfg.chrome_cookie_ttl,

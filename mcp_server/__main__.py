@@ -11,6 +11,7 @@ logging.basicConfig(
 
 try:
     from mcp_server.server import run
+
     run()
 except KeyboardInterrupt:
     pass

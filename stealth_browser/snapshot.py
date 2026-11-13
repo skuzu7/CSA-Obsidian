@@ -79,7 +79,13 @@ class PageSnapshot:
             "url": self.url,
             "title": self.title,
             "refs": [
-                {"index": r.index, "role": r.role, "label": r.label, "tag": r.tag, "bbox": list(r.bbox)}
+                {
+                    "index": r.index,
+                    "role": r.role,
+                    "label": r.label,
+                    "tag": r.tag,
+                    "bbox": list(r.bbox),
+                }
                 for r in self.refs
             ],
             "markdown": self.markdown,
@@ -106,6 +112,7 @@ async def take_snapshot(
         items = json.loads(raw)
     except json.JSONDecodeError as exc:
         from stealth_browser.errors import SnapshotError
+
         raise SnapshotError(f"Invalid JSON from snapshot JS: {exc}") from exc
     refs = [
         RefElement(
@@ -121,7 +128,9 @@ async def take_snapshot(
     markdown = ""
     if include_markdown:
         html = await page.content()
-        markdown = await asyncio.to_thread(trafilatura.extract, html, output_format="markdown") or ""
+        markdown = (
+            await asyncio.to_thread(trafilatura.extract, html, output_format="markdown") or ""
+        )
 
     screenshot_b64 = None
     if include_screenshot:

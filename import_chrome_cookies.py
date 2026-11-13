@@ -1,4 +1,5 @@
 """Extract Chrome cookies and inject into the running Camoufox LinkedIn session."""
+
 import asyncio
 from pathlib import Path
 
@@ -8,7 +9,7 @@ from stealth_browser.config import BrowserConfig
 
 
 async def main():
-    cookies = extract(Path("chrome_cookies.json"))
+    cookies = extract()
     print(f"\n{len(cookies)} cookies extraídos do Chrome.")
 
     cfg = BrowserConfig(profile_dir=Path("profiles/linkedin"))

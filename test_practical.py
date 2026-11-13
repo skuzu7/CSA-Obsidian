@@ -1,4 +1,5 @@
 """Teste prático end-to-end do automation-stealth."""
+
 import asyncio
 import time
 from pathlib import Path
@@ -59,7 +60,9 @@ async def main():
             assert len(snap.refs) >= 0
             assert snap.markdown
             assert snap.screenshot_b64
-            print(f"[3/7] Snapshot .................. {PASS} refs={len(snap.refs)}, md={len(snap.markdown)} chars, screenshot={len(snap.screenshot_b64)} b64")
+            print(
+                f"[3/7] Snapshot .................. {PASS} refs={len(snap.refs)}, md={len(snap.markdown)} chars, screenshot={len(snap.screenshot_b64)} b64"
+            )
             results["snapshot"] = True
         except Exception as e:
             print(f"[3/7] Snapshot .................. {FAIL} {e}")
@@ -110,7 +113,9 @@ async def main():
             await page.goto("https://example.com", wait_until="domcontentloaded")
             await asyncio.sleep(1)
             interceptor.detach()
-            print(f"[7/7] Request interceptor ........ {PASS} captured={len(interceptor.captured)} requests")
+            print(
+                f"[7/7] Request interceptor ........ {PASS} captured={len(interceptor.captured)} requests"
+            )
             results["interceptor"] = True
         except Exception as e:
             print(f"[7/7] Request interceptor ........ {FAIL} {e}")
