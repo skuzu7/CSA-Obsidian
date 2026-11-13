@@ -9,6 +9,8 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from cookie_export import persist_cookie_export
+
 CHROME_USER_DATA = Path.home() / "AppData/Local/Google/Chrome/User Data"
 COOKIES_DB = CHROME_USER_DATA / "Default/Network/Cookies"
 LOCAL_STATE = CHROME_USER_DATA / "Local State"
@@ -111,11 +113,18 @@ def extract(output: Path | None = None) -> list[dict]:
             "sameSite": _sameSite_map(r["samesite"]),
         })
 
-    dest = output or Path("chrome_cookies.json")
-    dest.write_text(json.dumps(cookies, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Exportados {len(cookies)} cookies -> {dest}")
+    dest = persist_cookie_export(cookies, output)
+    if dest is None:
+        print(f"Extraídos {len(cookies)} cookies apenas em memória")
+    else:
+        print(f"Exportados {len(cookies)} cookies -> {dest}")
     return cookies
 
 
 if __name__ == "__main__":
-    extract()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Explicitly export your own Chrome cookies")
+    parser.add_argument("--output", type=Path, required=True, help="New private JSON path")
+    args = parser.parse_args()
+    extract(args.output)
