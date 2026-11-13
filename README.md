@@ -54,12 +54,14 @@ from stealth_browser.browser import BrowserManager
 from stealth_browser.config import BrowserConfig
 from stealth_browser.snapshot import take_snapshot
 
+
 async def main():
     async with BrowserManager(BrowserConfig(headless=True)) as bm:
         page = await bm.get_page()
         await page.goto("https://example.com")
         snap = await take_snapshot(page)
-        print(snap.to_llm_text())   # title, URL, indexed interactive elements, markdown
+        print(snap.to_llm_text())  # title, URL, indexed interactive elements, markdown
+
 
 asyncio.run(main())
 ```
@@ -136,12 +138,14 @@ from stealth_browser.config import BrowserConfig
 from stealth_browser.humanize import HumanBehavior
 from tasks.trading.binance import BinanceTokenTask
 
+
 async def main():
     cfg = BrowserConfig(headless=True)
     async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         task = BinanceTokenTask(page, HumanBehavior(cfg), cfg)
         print(await task.run(timeout=90))
+
 
 asyncio.run(main())
 ```

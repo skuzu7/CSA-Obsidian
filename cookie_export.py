@@ -1,4 +1,5 @@
 """Explicit, private-at-creation export of synthetic or user-owned browser cookies."""
+
 from __future__ import annotations
 
 import json

@@ -48,6 +48,7 @@ async def test_navigate_with_custom_timeout(mock_page):
 
 async def test_evaluate(mock_page):
     from stealth_browser.page_ops import evaluate
+
     mock_page.evaluate = AsyncMock(return_value=42)
     result = await evaluate(mock_page, "1+1")
     assert result == 42
@@ -55,6 +56,7 @@ async def test_evaluate(mock_page):
 
 async def test_get_cookies(mock_page):
     from stealth_browser.page_ops import get_cookies
+
     mock_page.context.cookies = AsyncMock(return_value=[{"name": "session", "value": "abc"}])
     cookies = await get_cookies(mock_page)
     assert len(cookies) == 1

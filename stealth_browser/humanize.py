@@ -30,7 +30,9 @@ class HumanBehavior:
             delay = 1.0 / cps
             await page.keyboard.type(char)
             if char == " ":
-                delay += max(0.0, random.gauss(cfg.typing_word_pause_mean, cfg.typing_word_pause_std))
+                delay += max(
+                    0.0, random.gauss(cfg.typing_word_pause_mean, cfg.typing_word_pause_std)
+                )
             if random.random() < cfg.typing_hesitation_prob:
                 delay += random.uniform(0.8, 2.5)
             await asyncio.sleep(delay)

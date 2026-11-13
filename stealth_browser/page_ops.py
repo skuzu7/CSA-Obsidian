@@ -15,7 +15,9 @@ from stealth_browser.humanize import HumanBehavior
 logger = logging.getLogger(__name__)
 
 
-async def navigate(page: Page, url: str, wait_until: str = "domcontentloaded", timeout: int = 30_000) -> None:
+async def navigate(
+    page: Page, url: str, wait_until: str = "domcontentloaded", timeout: int = 30_000
+) -> None:
     logger.debug("navigate → %s", url)
     try:
         await page.goto(url, wait_until=wait_until, timeout=timeout)

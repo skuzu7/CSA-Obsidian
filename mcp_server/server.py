@@ -33,6 +33,7 @@ def _mcp_tool(fn):
         except Exception as e:
             logger.error("%s failed: %s", fn.__name__, e, exc_info=True)
             return {"error": str(e), "tool": fn.__name__}
+
     return wrapper
 
 

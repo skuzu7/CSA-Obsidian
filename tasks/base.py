@@ -17,8 +17,7 @@ class BaseTask(ABC):
         self.config = config
 
     @abstractmethod
-    async def run(self, **kwargs) -> dict:
-        ...
+    async def run(self, **kwargs) -> dict: ...
 
     async def snapshot(self, include_screenshot: bool = False) -> PageSnapshot:
         return await take_snapshot(self.page, include_screenshot)

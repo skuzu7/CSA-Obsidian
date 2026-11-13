@@ -14,6 +14,7 @@ def make_page():
 @pytest.fixture
 def interceptor():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     return RequestInterceptor(page, url_pattern="*example.com*", header_names=["x-token"])
 
@@ -31,12 +32,14 @@ def test_detach_removes_listener(interceptor):
 
 def test_captured_is_deque(interceptor):
     import collections
+
     assert isinstance(interceptor.captured, collections.deque)
     assert interceptor.captured.maxlen == 500
 
 
 async def test_context_manager_attaches_and_detaches():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     async with RequestInterceptor(page) as ic:
         page.on.assert_called_once_with("request", ic._on_request)
@@ -45,6 +48,7 @@ async def test_context_manager_attaches_and_detaches():
 
 def test_on_request_filters_by_url_pattern():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page, url_pattern="*binance.com*")
 
@@ -67,6 +71,7 @@ def test_on_request_filters_by_url_pattern():
 
 def test_on_request_filters_by_header_names():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page, url_pattern="*", header_names=["x-token"])
 
@@ -88,6 +93,7 @@ def test_on_request_filters_by_header_names():
 
 async def test_wait_for_header_finds_existing():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page)
 
@@ -100,6 +106,7 @@ async def test_wait_for_header_finds_existing():
 
 async def test_wait_for_header_case_insensitive():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page)
 
@@ -112,6 +119,7 @@ async def test_wait_for_header_case_insensitive():
 
 async def test_wait_for_header_timeout():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page)
 
@@ -121,12 +129,15 @@ async def test_wait_for_header_timeout():
 
 async def test_wait_for_header_triggered_by_event():
     from stealth_browser.intercept import RequestInterceptor
+
     page = make_page()
     ic = RequestInterceptor(page)
 
     async def inject_after_delay():
         await asyncio.sleep(0.05)
-        ic.captured.append({"url": "https://x.com", "method": "GET", "headers": {"auth": "token42"}})
+        ic.captured.append(
+            {"url": "https://x.com", "method": "GET", "headers": {"auth": "token42"}}
+        )
         ic._event.set()
 
     asyncio.create_task(inject_after_delay())

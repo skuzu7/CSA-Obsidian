@@ -1,4 +1,5 @@
 """Extract and decrypt all cookies from Chrome, export as Playwright-compatible JSON."""
+
 from __future__ import annotations
 
 import base64
@@ -41,7 +42,10 @@ def _decrypt_value(encrypted: bytes, key: bytes) -> str:
     # Legacy DPAPI-only cookies
     try:
         import win32crypt  # noqa: PLC0415
-        return win32crypt.CryptUnprotectData(encrypted, None, None, None, 0)[1].decode("utf-8", errors="replace")
+
+        return win32crypt.CryptUnprotectData(encrypted, None, None, None, 0)[1].decode(
+            "utf-8", errors="replace"
+        )
     except Exception:
         return ""
 
@@ -58,29 +62,33 @@ def extract(output: Path | None = None) -> list[dict]:
         tmp = Path(temp_dir) / "Cookies"
         import ctypes
         import ctypes.wintypes as wt
-    
+
         kernel32 = ctypes.windll.kernel32
         GENERIC_READ = 0x80000000
         FILE_SHARE_READ = 0x1
         FILE_SHARE_WRITE = 0x2
         FILE_SHARE_DELETE = 0x4
         OPEN_EXISTING = 3
-    
+
         handle = kernel32.CreateFileW(
-            str(COOKIES_DB), GENERIC_READ,
+            str(COOKIES_DB),
+            GENERIC_READ,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            None, OPEN_EXISTING, 0, None,
+            None,
+            OPEN_EXISTING,
+            0,
+            None,
         )
         if handle == -1:
             raise PermissionError(f"Não conseguiu abrir {COOKIES_DB}")
-    
+
         size = COOKIES_DB.stat().st_size
         buf = ctypes.create_string_buffer(size)
         bytes_read = wt.DWORD(0)
         kernel32.ReadFile(handle, buf, size, ctypes.byref(bytes_read), None)
         kernel32.CloseHandle(handle)
-        tmp.write_bytes(buf.raw[:bytes_read.value])
-    
+        tmp.write_bytes(buf.raw[: bytes_read.value])
+
         conn = sqlite3.connect(str(tmp))
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -102,16 +110,18 @@ def extract(output: Path | None = None) -> list[dict]:
         else:
             unix_ts = -1
 
-        cookies.append({
-            "name": r["name"],
-            "value": value,
-            "domain": domain,
-            "path": r["path"],
-            "expires": unix_ts,
-            "httpOnly": bool(r["is_httponly"]),
-            "secure": bool(r["is_secure"]),
-            "sameSite": _sameSite_map(r["samesite"]),
-        })
+        cookies.append(
+            {
+                "name": r["name"],
+                "value": value,
+                "domain": domain,
+                "path": r["path"],
+                "expires": unix_ts,
+                "httpOnly": bool(r["is_httponly"]),
+                "secure": bool(r["is_secure"]),
+                "sameSite": _sameSite_map(r["samesite"]),
+            }
+        )
 
     dest = persist_cookie_export(cookies, output)
     if dest is None:

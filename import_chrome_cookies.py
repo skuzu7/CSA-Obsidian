@@ -1,4 +1,5 @@
 """Extract Chrome cookies and inject into the running Camoufox LinkedIn session."""
+
 import asyncio
 from pathlib import Path
 
