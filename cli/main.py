@@ -45,31 +45,6 @@ async def _open_page(url: str, profile: str, screenshot: bool):
 
 
 @cli.command()
-@click.option("--profile", default="default")
-@click.option("--timeout", default=60.0, type=float)
-def binance_tokens(profile: str, timeout: float):
-    try:
-        asyncio.run(_binance_tokens(profile, timeout))
-    except Exception as e:
-        click.echo(f"Erro: {e}", err=True)
-        raise SystemExit(1)
-
-
-async def _binance_tokens(profile: str, timeout: float):
-    from tasks.trading.binance import BinanceTokenTask
-
-    cfg = BrowserConfig(profile_dir=Path.home() / ".automation-stealth" / "profiles" / profile)
-    async with BrowserManager(cfg) as bm:
-        page = await bm.get_page()
-        human = HumanBehavior(cfg)
-        task = BinanceTokenTask(page, human, cfg)
-        result = await task.run(timeout=timeout)
-        for k, v in result.items():
-            if k != "captured":
-                click.echo(f"{k}: {v}")
-
-
-@cli.command()
 @click.argument("url")
 @click.option("--profile", default="default")
 @click.option("--interval", default=60.0, type=float)
