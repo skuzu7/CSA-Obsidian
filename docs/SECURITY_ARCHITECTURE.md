@@ -55,7 +55,7 @@ Permitted purpose: controlled browser compatibility, QA, accessibility, and eval
 
 - Browser profiles and known cookie/session artifacts are excluded by `.gitignore`.
 - The Chrome cookie export path is explicit and defaults to memory-only behavior.
-- Linux CI exercises POSIX file modes and mocked Windows ACL command construction. A dedicated Windows runner executes real `icacls` integration checks against a temporary profile and cookie file. This validates the Windows ACL path in CI, but not every Windows deployment policy or enterprise domain configuration.
+- Linux CI exercises POSIX file modes and mocked Windows ACL command construction. A dedicated Windows runner executes real `icacls` changes and PowerShell SID-level DACL checks against a temporary profile and cookie file. This validates the Windows ACL path in CI, but not every Windows deployment policy or enterprise domain configuration.
 - A passing test suite does not establish that the MCP server is isolated from the network, that all headers are redacted, or that production credentials are protected.
 
 ## 7. Required handling rules
