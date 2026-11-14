@@ -11,6 +11,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from cookie_export import persist_cookie_export
+from stealth_browser.file_security import ensure_private_directory
 
 CHROME_USER_DATA = Path.home() / "AppData/Local/Google/Chrome/User Data"
 COOKIES_DB = CHROME_USER_DATA / "Default/Network/Cookies"
@@ -59,7 +60,8 @@ def extract(output: Path | None = None) -> list[dict]:
 
     # Copy DB avoiding Chrome lock — open with shared read access
     with tempfile.TemporaryDirectory() as temp_dir:
-        tmp = Path(temp_dir) / "Cookies"
+        private_temp_dir = ensure_private_directory(Path(temp_dir))
+        tmp = private_temp_dir / "Cookies"
         import ctypes
         import ctypes.wintypes as wt
 
