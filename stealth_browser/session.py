@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 def write_private_json(path: Path, value: Any) -> None:
     """Atomically write sensitive session material with owner-only access."""
-    parent = ensure_private_directory(path.parent)
+    parent = Path(path.parent).expanduser()
+    parent.mkdir(parents=True, exist_ok=True)
     destination = parent / path.name
     fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=parent)
     try:
@@ -49,7 +50,6 @@ async def load_cookies(page: Page, path: Path) -> None:
     if not path.exists():
         logger.debug("Cookie file not found: %s", path)
         return
-    ensure_private_directory(path.parent)
     restrict_private_file(path)
     cookies = json.loads(path.read_text(encoding="utf-8"))
     await page.context.add_cookies(cookies)
