@@ -54,6 +54,6 @@ jobs:
 
       - name: Run Windows filesystem security tests
         run: |
-          ruff check stealth_browser/file_security.py stealth_browser/session.py tests/test_file_security.py tests/test_session.py
-          ruff format --check stealth_browser/file_security.py stealth_browser/session.py tests/test_file_security.py tests/test_session.py
-          pytest -q tests/test_file_security.py tests/test_session.py
+          ruff check stealth_browser/file_security.py stealth_browser/session.py cookie_export.py tests/test_file_security.py tests/test_session.py tests/test_cookie_export.py
+          ruff format --check stealth_browser/file_security.py stealth_browser/session.py cookie_export.py tests/test_file_security.py tests/test_session.py tests/test_cookie_export.py
+          pytest -q tests/test_file_security.py tests/test_session.py tests/test_cookie_export.py
