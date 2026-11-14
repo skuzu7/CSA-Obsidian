@@ -91,7 +91,9 @@ def test_sensitive_and_unknown_header_values_are_redacted():
 
 def test_header_filter_only_stores_selected_names_and_redacts_custom_values():
     instance = RequestInterceptor(make_page(), header_names=["x-token"])
-    instance._on_request(request(headers={"x-token": "secret-value", "content-type": "application/json"}))
+    instance._on_request(
+        request(headers={"x-token": "secret-value", "content-type": "application/json"})
+    )
     assert instance.captured[0]["headers"] == {"x-token": REDACTED}
 
 
@@ -130,7 +132,11 @@ async def test_wait_for_header_triggered_by_event():
     async def inject_after_delay():
         await asyncio.sleep(0.05)
         instance.captured.append(
-            {"url": "https://x.com", "method": "GET", "headers": {"content-type": "application/json"}}
+            {
+                "url": "https://x.com",
+                "method": "GET",
+                "headers": {"content-type": "application/json"},
+            }
         )
         instance._event.set()
 
