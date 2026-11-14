@@ -83,6 +83,7 @@ def test_local_browser_resource_schemes_do_not_create_network_egress():
 
 
 def test_safe_origin_drops_credentials_paths_and_query_values():
-    assert safe_origin(
-        "https://user:password@example.com/private/path?token=secret#fragment"
-    ) == "https://example.com"
+    assert (
+        safe_origin("https://user:password@example.com/private/path?token=secret#fragment")
+        == "https://example.com"
+    )
