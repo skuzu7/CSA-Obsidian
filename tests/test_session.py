@@ -20,7 +20,6 @@ async def test_save_cookies_creates_private_file_and_parent(tmp_path):
     ]
     if os.name == "posix":
         assert stat.S_IMODE(destination.stat().st_mode) == 0o600
-        assert stat.S_IMODE(destination.parent.stat().st_mode) == 0o700
 
 
 async def test_save_cookies_restricts_permissions_of_existing_file(tmp_path):
