@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +11,33 @@ from playwright.async_api import Page
 logger = logging.getLogger(__name__)
 
 
+def _write_private_json(path: Path, value: Any) -> None:
+    """Write session material with owner-only POSIX permissions.
+
+    O_NOFOLLOW prevents a pre-existing symlink from redirecting the write on
+    platforms that support it. Windows ignores POSIX mode bits; its directory
+    ACL remains the controlling access boundary.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags, 0o600)
+    try:
+        if os.name == "posix":
+            os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            fd = -1
+            json.dump(value, file, indent=2, ensure_ascii=False)
+            file.flush()
+            os.fsync(file.fileno())
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 async def save_cookies(page: Page, path: Path) -> None:
     cookies = await page.context.cookies()
-    path.write_text(json.dumps(cookies, indent=2), encoding="utf-8")
+    _write_private_json(path, cookies)
     logger.debug("Saved %d cookies to %s", len(cookies), path)
 
 
