@@ -22,9 +22,7 @@ def test_windows_acl_grants_user_system_admin_and_removes_broad_groups(monkeypat
     def fake_run(command, **kwargs):
         calls.append(command)
         if command[0] == "whoami":
-            return SimpleNamespace(
-                stdout='"DOMAIN\\user","S-1-5-21-111-222-333-1001"\n'
-            )
+            return SimpleNamespace(stdout='"DOMAIN\\user","S-1-5-21-111-222-333-1001"\n')
         return SimpleNamespace(stdout="")
 
     monkeypatch.setattr(security, "_is_windows", lambda: True)
