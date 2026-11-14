@@ -50,12 +50,20 @@ async def test_context_manager_attaches_and_detaches():
     page.remove_listener.assert_called_once_with("request", instance._on_request)
 
 
-def test_on_request_filters_by_url_pattern():
-    instance = RequestInterceptor(make_page(), url_pattern="*binance.com*")
-    instance._on_request(request("https://api.binance.com/api/v3/ping", {"content-type": "application/json"}))
-    instance._on_request(request("https://google.com", {"content-type": "text/html"}))
+def test_on_request_filters_by_url_pattern_and_stores_origin_only():
+    instance = RequestInterceptor(make_page(), url_pattern="*example.com*")
+    instance._on_request(
+        request(
+            "https://user:password@example.com/api/v1?token=never-store-this#fragment",
+            {"content-type": "application/json"},
+        )
+    )
+    instance._on_request(request("https://google.com/path", {"content-type": "text/html"}))
     assert len(instance.captured) == 1
-    assert instance.captured[0]["url"] == "https://api.binance.com/api/v3/ping"
+    assert instance.captured[0]["url"] == "https://example.com"
+    assert "password" not in repr(instance.captured)
+    assert "never-store-this" not in repr(instance.captured)
+    assert "fragment" not in repr(instance.captured)
 
 
 def test_sensitive_and_unknown_header_values_are_redacted():
@@ -69,12 +77,13 @@ def test_sensitive_and_unknown_header_values_are_redacted():
                 "x-api-key": "never-store-this",
                 "x-csrf-token": "never-store-this",
                 "x-trace-id": "custom-value",
+                "referer": "https://example.com/private?token=never-store-this",
             }
         )
     )
     headers = instance.captured[0]["headers"]
     assert headers["content-type"] == "application/json"
-    for name in ("authorization", "cookie", "x-api-key", "x-csrf-token", "x-trace-id"):
+    for name in ("authorization", "cookie", "x-api-key", "x-csrf-token", "x-trace-id", "referer"):
         assert headers[name] == REDACTED
     assert "never-store-this" not in repr(instance.captured)
     assert "custom-value" not in repr(instance.captured)
