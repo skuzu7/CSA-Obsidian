@@ -36,9 +36,9 @@ async def test_save_cookies_restricts_permissions_of_existing_file(tmp_path):
     assert stat.S_IMODE(destination.stat().st_mode) == 0o600
 
 
-async def test_save_cookies_does_not_follow_symlink_on_posix(tmp_path):
-    if os.name != "posix" or not hasattr(os, "O_NOFOLLOW"):
-        pytest.skip("O_NOFOLLOW is unavailable")
+async def test_save_cookies_replaces_symlink_without_following_target(tmp_path):
+    if os.name != "posix":
+        pytest.skip("Symlink creation requires POSIX test permissions")
     target = tmp_path / "target.json"
     target.write_text("keep", encoding="utf-8")
     link = tmp_path / "cookies.json"
@@ -46,6 +46,23 @@ async def test_save_cookies_does_not_follow_symlink_on_posix(tmp_path):
     page = MagicMock()
     page.context.cookies = AsyncMock(return_value=[{"name": "x", "value": "secret"}])
 
-    with pytest.raises(OSError):
-        await save_cookies(page, link)
+    await save_cookies(page, link)
+    assert not link.is_symlink()
+    assert json.loads(link.read_text(encoding="utf-8")) == [{"name": "x", "value": "secret"}]
     assert target.read_text(encoding="utf-8") == "keep"
+
+
+async def test_save_cookies_does_not_change_parent_directory_permissions(tmp_path):
+    if os.name != "posix":
+        pytest.skip("POSIX mode bits are not Windows ACLs")
+    parent = tmp_path / "shared"
+    parent.mkdir()
+    parent.chmod(0o755)
+    destination = parent / "cookies.json"
+    page = MagicMock()
+    page.context.cookies = AsyncMock(return_value=[{"name": "session", "value": "synthetic"}])
+
+    await save_cookies(page, destination)
+
+    assert stat.S_IMODE(parent.stat().st_mode) == 0o755
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o600

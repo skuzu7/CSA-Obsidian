@@ -38,7 +38,7 @@ controlled browser profile.
 
 ## Security boundaries
 
-This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. Session names are validated and POSIX session files are owner-only (0600). The server is still a privileged browser-control process, not a sandbox or network egress filter, and it does not enforce a global host allowlist. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
+This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. The browser context enforces a fail-closed HTTP(S) host allowlist (`STEALTH_ALLOWED_HOSTS`), with Firefox service workers disabled. Profile/session directories and files are restricted to the current user plus SYSTEM/local Administrators on Windows, and use POSIX 0700/0600 modes. This remains a privileged browser-control process, not an OS sandbox or IP-level network egress firewall. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ## 🚀 Quickstart
 
@@ -59,7 +59,8 @@ from stealth_browser.snapshot import take_snapshot
 
 
 async def main():
-    async with BrowserManager(BrowserConfig(headless=True)) as bm:
+    cfg = BrowserConfig(headless=True, allowed_hosts=("example.com",))
+    async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         await page.goto("https://example.com")
         snap = await take_snapshot(page)
@@ -110,9 +111,10 @@ claude mcp add stealth-browser -- stealth-browser-mcp
 ## 🖥️ CLI
 
 ```bash
+# PowerShell: $env:STEALTH_ALLOWED_HOSTS = "example.com"
+# Bash: export STEALTH_ALLOWED_HOSTS=example.com
 stealth-browser open-page https://example.com               # snapshot to stdout
 stealth-browser open-page https://example.com --screenshot  # + save screenshot
-stealth-browser monitor https://news.site --interval 30 --checks 20
 ```
 
 ## ⚙️ Configuration
@@ -121,7 +123,8 @@ Copy `env.example` → `.env` and tune:
 
 | Variable | Default | Description |
 |---|---|---|
-| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path |
+| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path (restricted to the current user, SYSTEM, and local Administrators) |
+| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S))_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports (an explicit port is scheme-agnostic); e.g. `example.com,*.example.org,localhost:3000` |
 | `STEALTH_HEADLESS` | `false` | Headless mode |
 | `STEALTH_OS_TARGET` | `windows` | Spoofed OS (`windows`, `macos`, `linux`) |
 | `STEALTH_LOCALE` | `pt-BR,pt` | Browser locale |
@@ -164,9 +167,10 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Run `ruff check .` and `
 Use this project only with accounts, browser profiles, and systems owned by the
 operator or covered by explicit testing authorization. Keep generated profiles,
 cookie exports, session files, and credentials outside version control. MCP cookie
-values are redacted and request-header values are allowlisted; direct Python APIs
-and arbitrary page JavaScript remain privileged and must be used only in trusted
-local workflows. Review all agent actions before they affect external state.
+values are redacted and request-header values are allowlisted. The browser's HTTP(S)
+requests are constrained by the configured host allowlist; direct Python APIs and
+arbitrary page JavaScript remain privileged and must be used only in trusted local
+workflows. Review all agent actions before they affect external state.
 
 ## 📜 License
 

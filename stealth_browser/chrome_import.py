@@ -15,6 +15,9 @@ import time
 from pathlib import Path
 from urllib.request import urlopen
 
+from stealth_browser.file_security import ensure_private_directory, restrict_private_file
+from stealth_browser.session import write_private_json
+
 _CHROME_CANDIDATES = [
     Path(os.environ.get("PROGRAMFILES", r"C:\Program Files"))
     / "Google"
@@ -104,9 +107,11 @@ def _cdp_to_playwright(cdp_cookies: list[dict]) -> list[dict]:
 
 
 def _read_cache(cache_dir: Path, ttl: int) -> list[dict] | None:
+    cache_dir = ensure_private_directory(cache_dir)
     cache_file = cache_dir / CACHE_FILENAME
     if not cache_file.exists():
         return None
+    restrict_private_file(cache_file)
     age = time.time() - cache_file.stat().st_mtime
     if age >= ttl:
         return None
@@ -114,11 +119,8 @@ def _read_cache(cache_dir: Path, ttl: int) -> list[dict] | None:
 
 
 def _write_cache(cache_dir: Path, cookies: list[dict]) -> None:
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    (cache_dir / CACHE_FILENAME).write_text(
-        json.dumps(cookies, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    cache_dir = ensure_private_directory(cache_dir)
+    write_private_json(cache_dir / CACHE_FILENAME, cookies)
 
 
 async def extract_chrome_cookies(

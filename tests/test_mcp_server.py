@@ -174,3 +174,19 @@ async def test_browser_get_cookies_redacts_values(monkeypatch):
         {"name": "session", "value": "[REDACTED]", "domain": "example.com"}
     ]
     assert "bearer-secret" not in repr(result)
+
+
+async def test_browser_open_rejects_non_allowlisted_url_before_starting_browser(monkeypatch):
+    import mcp_server.server as srv
+
+    monkeypatch.setenv("STEALTH_ALLOWED_HOSTS", "example.com")
+    monkeypatch.setattr(
+        srv,
+        "_ensure_browser",
+        AsyncMock(side_effect=AssertionError("browser must not start for a blocked URL")),
+    )
+
+    result = await srv.browser_open("https://evil.example/private?token=synthetic")
+
+    assert "STEALTH_ALLOWED_HOSTS" in result["error"]
+    assert "browser must not start" not in result["error"]

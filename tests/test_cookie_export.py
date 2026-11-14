@@ -22,6 +22,7 @@ def test_export_requires_explicit_destination_and_restricts_permissions(tmp_path
     assert json.loads(destination.read_text(encoding="utf-8")) == data
     if os.name == "posix":
         assert stat.S_IMODE(destination.stat().st_mode) == 0o600
+        assert stat.S_IMODE(destination.parent.stat().st_mode) == 0o700
 
 
 def test_existing_cookie_file_cannot_be_overwritten(tmp_path):
@@ -30,3 +31,17 @@ def test_existing_cookie_file_cannot_be_overwritten(tmp_path):
     with pytest.raises(FileExistsError):
         persist_cookie_export([{"name": "another"}], destination)
     assert destination.read_text(encoding="utf-8") == "keep me"
+
+
+def test_export_does_not_change_user_selected_parent_permissions(tmp_path):
+    if os.name != "posix":
+        pytest.skip("POSIX mode bits are not Windows ACLs")
+    parent = tmp_path / "shared"
+    parent.mkdir()
+    parent.chmod(0o755)
+    destination = parent / "cookies.json"
+
+    persist_cookie_export([{"name": "synthetic", "value": "TEST_ONLY"}], destination)
+
+    assert stat.S_IMODE(parent.stat().st_mode) == 0o755
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o600

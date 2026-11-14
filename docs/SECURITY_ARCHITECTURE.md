@@ -14,11 +14,13 @@ Use only systems and accounts that the operator owns or is explicitly authorized
 
 The MCP server exposes browser navigation, interaction, screenshots, page text, cookie access, JavaScript evaluation, and session save/load operations. In particular:
 
-- `browser_open` accepts a caller-supplied URL; the generic browser interface does not enforce a repository-wide host allowlist.
+- `browser_open` validates its URL against `STEALTH_ALLOWED_HOSTS` before starting navigation. The persistent browser context also routes every HTTP(S) request through the same host policy, covering top-level navigation, redirects, subresources, fetch/XHR, and popups.
 - `browser_evaluate` executes caller-supplied JavaScript in the active page context.
 - `browser_get_cookies` returns cookies from the active browser context.
 - Session save/load functions can read and write cookie and storage state.
-- The MCP server is an automation interface, not an OS sandbox, network egress filter, or complete authorization policy engine. Named session paths reject traversal and absolute names.
+- The host policy is fail-closed: an empty or unset allowlist denies all HTTP(S) requests. Entries are exact DNS/IP hosts, `*.domain` subdomain rules, and optional explicit ports; a host without a port matches only HTTP 80 or HTTPS 443, while an explicit host:port rule allows that port over either HTTP or HTTPS. `about:blank`, `data:`, and `blob:` are local browser resources; other schemes are rejected by the navigation policy.
+- The browser context uses Playwright routing and disables Firefox service workers (`dom.serviceWorkers.enabled=false`) so service-worker requests cannot bypass route interception. Named session paths reject traversal and absolute names.
+- This is not an OS sandbox or IP-level egress firewall. It does not pin DNS answers or prevent an allowlisted hostname from resolving to a private address; use an OS/network firewall for that threat.
 - `browser_get_cookies` returns cookie metadata with each cookie `value` replaced by `[REDACTED]`. Direct Python APIs and arbitrary page JavaScript remain privileged surfaces.
 
 An MCP client or model must not be treated as a trusted authorization authority. The operator must independently constrain the target, profile, account, permitted actions, and data exposed to the client.
@@ -34,11 +36,12 @@ The service-specific Binance CSRF-token task, CLI command, and Python example ha
 The project supports reading and persisting browser state. These behaviors must not be described as “zero credential persistence”:
 
 - The browser context can expose cookies to the application.
-- `stealth_browser/session.py` writes cookie dictionaries to JSON with owner-only mode `0600` on POSIX, including when an existing file's permissions need tightening. It uses `O_NOFOLLOW` where supported. Windows mode bits are not an ACL; Windows directory permissions still need separate review.
+- `stealth_browser/session.py` writes cookie dictionaries atomically. POSIX session directories/files are restricted to `0700`/`0600`; Windows uses `icacls` to disable inherited broad access, grant the current user, SYSTEM, and local Administrators, and remove Everyone, Users, Authenticated Users, Interactive, Remote Interactive, and Network access groups.
+- `BrowserManager` secures the persistent profile directory before starting Camoufox. Session save/load applies the same policy to the session directory and cookie file. If Windows ACL commands fail, startup or persistence fails closed rather than silently continuing.
 - Session storage helpers read and write localStorage and sessionStorage values for a supplied origin.
 - Persistent browser profiles may retain authenticated state between runs.
 - `chrome_cookies.py` can decrypt cookies from the operator's own Chrome profile. Its default path keeps values in memory; an explicit export path is required for file output.
-- The dedicated Chrome export helper uses exclusive creation and requests mode 0600 on POSIX. On Windows, the containing directory's ACL determines access and must be checked separately.
+- The dedicated Chrome export helper uses exclusive creation and applies the POSIX 0600 or Windows `icacls` file policy before writing cookie values. It does not change permissions on the caller's chosen parent directory. Its temporary database copy is created inside a restricted temporary directory.
 
 A cookie or session export can function as a bearer credential. Prefer synthetic test accounts and short-lived sessions. Store any explicitly authorized export outside synced/shared folders, restrict filesystem access, never commit it, and revoke the session if exposure is suspected.
 
@@ -52,7 +55,7 @@ Permitted purpose: controlled browser compatibility, QA, accessibility, and eval
 
 - Browser profiles and known cookie/session artifacts are excluded by `.gitignore`.
 - The Chrome cookie export path is explicit and defaults to memory-only behavior.
-- CI exercises the export policy and Python tests; Linux CI does **not** validate live Windows Chrome decryption or Windows ACL behavior.
+- Linux CI exercises POSIX file modes and mocked Windows ACL command construction. A dedicated Windows runner executes real `icacls` changes and PowerShell SID-level DACL checks against a temporary profile and cookie file. This validates the Windows ACL path in CI, but not every Windows deployment policy or enterprise domain configuration.
 - A passing test suite does not establish that the MCP server is isolated from the network, that all headers are redacted, or that production credentials are protected.
 
 ## 7. Required handling rules
@@ -66,10 +69,8 @@ Permitted purpose: controlled browser compatibility, QA, accessibility, and eval
 
 ## 8. Remaining engineering work
 
-- Add an explicit host allowlist and per-tool authorization policy before using the MCP server with untrusted agent plans.
-- Review Windows ACLs for the profiles and session directories; POSIX mode bits do not enforce Windows access control.
+- Add OS/network firewall rules if IP-level egress control or DNS-rebinding protection is required.
 - Consider a separate policy for direct Python cookie access and arbitrary page JavaScript.
-- Have an independent reviewer inspect the resulting code and threat model.
 - Have an independent reviewer inspect the resulting code and threat model.
 
 **Scope:** this document does not authorize testing of any third-party system. See [SECURITY.md](../SECURITY.md) for reporting and use restrictions.

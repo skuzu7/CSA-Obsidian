@@ -73,3 +73,19 @@ def test_typing_defaults():
     cfg = BrowserConfig()
     assert cfg.typing_cps_mean > 0
     assert cfg.typing_hesitation_prob >= 0
+
+
+def test_from_env_allowed_hosts(monkeypatch):
+    monkeypatch.setenv("STEALTH_ALLOWED_HOSTS", "example.com, *.example.org, localhost:3000")
+    cfg = BrowserConfig.from_env()
+    assert cfg.allowed_hosts == ("example.com", "*.example.org", "localhost:3000")
+
+
+def test_config_normalizes_allowed_host_entries():
+    cfg = BrowserConfig(allowed_hosts=("EXAMPLE.COM.", "*.Sub.Example.org"))
+    assert cfg.allowed_hosts == ("example.com", "*.sub.example.org")
+
+
+def test_config_rejects_malformed_allowed_host():
+    with pytest.raises(ValueError, match="Invalid allowed-host"):
+        BrowserConfig(allowed_hosts=("https://example.com/path",))

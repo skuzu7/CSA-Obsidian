@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from stealth_browser.policy import normalize_host_rule, parse_allowed_hosts
+
 logger = logging.getLogger(__name__)
 
 _PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +37,10 @@ class BrowserConfig:
     enable_cache: bool = False
     import_chrome_cookies: bool = False
     chrome_cookie_ttl: int = 3600
+    allowed_hosts: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        self.allowed_hosts = tuple(normalize_host_rule(host) for host in self.allowed_hosts)
 
     typing_cps_mean: float = 4.5
     typing_cps_std: float = 1.2
@@ -79,6 +85,8 @@ class BrowserConfig:
             kwargs["import_chrome_cookies"] = v.lower() in ("true", "1", "yes")
         if v := os.environ.get("STEALTH_CHROME_COOKIE_TTL"):
             kwargs["chrome_cookie_ttl"] = int(v)
+        if v := os.environ.get("STEALTH_ALLOWED_HOSTS"):
+            kwargs["allowed_hosts"] = parse_allowed_hosts(v)
         cfg = cls(**kwargs)
         logger.debug(
             "BrowserConfig loaded from env: headless=%s, profile=%s", cfg.headless, cfg.profile_dir

@@ -11,8 +11,10 @@ from playwright.async_api import Locator, Page
 from stealth_browser.browser import BrowserManager
 from stealth_browser.config import BrowserConfig
 from stealth_browser.errors import RefStale
+from stealth_browser.file_security import ensure_private_directory
 from stealth_browser.humanize import HumanBehavior
 from stealth_browser.page_ops import evaluate, extract_text, get_cookies, screenshot_b64
+from stealth_browser.policy import is_url_allowed
 from stealth_browser.session import load_cookies, save_cookies
 from stealth_browser.snapshot import RefElement, take_snapshot
 
@@ -111,7 +113,13 @@ def _resolve_ref(page: Page, ref: int) -> Locator:
 @mcp.tool()
 @_mcp_tool
 async def browser_open(url: str) -> dict:
-    """Navigate to a URL and return a snapshot of the page with all interactive elements."""
+    """Navigate to an allowlisted URL and return a snapshot of interactive elements."""
+    cfg = BrowserConfig.from_env()
+    if not is_url_allowed(url, cfg.allowed_hosts):
+        raise PermissionError(
+            "Navigation blocked by STEALTH_ALLOWED_HOSTS. Configure exact hosts, optional "
+            "*.subdomains, and explicit ports for non-standard services; an empty list denies network access."
+        )
     _, page, _ = await _ensure_browser()
     await page.goto(url)
     return await _auto_snapshot(page)
@@ -254,6 +262,7 @@ async def browser_save_session(name: str = "default") -> dict:
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = _session_path(cfg, name)
+    ensure_private_directory(path.parent)
     await save_cookies(page, path)
     return {"path": str(path)}
 
@@ -265,6 +274,7 @@ async def browser_load_session(name: str = "default") -> dict:
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = _session_path(cfg, name)
+    ensure_private_directory(path.parent)
     await load_cookies(page, path)
     return {"ok": True}
 

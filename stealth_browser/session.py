@@ -3,41 +3,48 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any
 
 from playwright.async_api import Page
 
+from stealth_browser.file_security import ensure_private_directory, restrict_private_file
+
 logger = logging.getLogger(__name__)
 
 
-def _write_private_json(path: Path, value: Any) -> None:
-    """Write session material with owner-only POSIX permissions.
-
-    O_NOFOLLOW prevents a pre-existing symlink from redirecting the write on
-    platforms that support it. Windows ignores POSIX mode bits; its directory
-    ACL remains the controlling access boundary.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0)
-    flags |= getattr(os, "O_BINARY", 0)
-    fd = os.open(path, flags, 0o600)
+def write_private_json(path: Path, value: Any) -> None:
+    """Atomically write sensitive JSON from a private same-volume staging directory."""
+    parent = Path(path.parent).expanduser()
+    parent.mkdir(parents=True, exist_ok=True)
+    destination = parent / path.name
+    staging_dir = Path(tempfile.mkdtemp(prefix=f".{path.name}.", dir=parent))
+    fd = -1
     try:
+        staging_dir = ensure_private_directory(staging_dir)
+        fd, temporary_name = tempfile.mkstemp(prefix="payload-", suffix=".tmp", dir=staging_dir)
+        temporary_path = Path(temporary_name)
         if os.name == "posix":
             os.fchmod(fd, 0o600)
+        restrict_private_file(temporary_path)
         with os.fdopen(fd, "w", encoding="utf-8") as file:
             fd = -1
             json.dump(value, file, indent=2, ensure_ascii=False)
             file.flush()
             os.fsync(file.fileno())
+        # Replacing a symlink replaces the link itself; it never writes through it.
+        os.replace(temporary_path, destination)
     finally:
         if fd >= 0:
             os.close(fd)
+        shutil.rmtree(staging_dir, ignore_errors=True)
 
 
 async def save_cookies(page: Page, path: Path) -> None:
     cookies = await page.context.cookies()
-    _write_private_json(path, cookies)
+    write_private_json(path, cookies)
     logger.debug("Saved %d cookies to %s", len(cookies), path)
 
 
@@ -45,6 +52,7 @@ async def load_cookies(page: Page, path: Path) -> None:
     if not path.exists():
         logger.debug("Cookie file not found: %s", path)
         return
+    restrict_private_file(path)
     cookies = json.loads(path.read_text(encoding="utf-8"))
     await page.context.add_cookies(cookies)
     logger.debug("Loaded %d cookies from %s", len(cookies), path)
