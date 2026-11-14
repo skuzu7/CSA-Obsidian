@@ -25,7 +25,7 @@ An MCP client or model must not be treated as a trusted authorization authority.
 
 ## 3. Request interception and sensitive headers
 
-`RequestInterceptor` stores matching request URLs, methods, and selected header names in a bounded in-memory deque. It exposes values only for a small allowlist of ordinary protocol metadata (for example `content-type` and `user-agent`). All unknown/custom headers and known sensitive headers are replaced with `[REDACTED]`; `wait_for_header` rejects names outside the allowlist. Tests cover authorization, cookies, API keys, CSRF headers, and custom trace/token headers.
+`RequestInterceptor` stores matching request URLs, methods, and selected header names in a bounded in-memory deque. It exposes values only for a small allowlist of ordinary protocol metadata (for example `content-type` and `user-agent`). All unknown/custom headers and known sensitive headers are replaced with `[REDACTED]`; `wait_for_header` rejects names outside the allowlist. Captured URLs are reduced to scheme and host; path, query, fragment, and URL user-info are omitted. Tests cover authorization, cookies, API keys, CSRF headers, and custom trace/token headers.
 
 The service-specific Binance CSRF-token task, CLI command, and Python example have been removed. There is no service-specific token-capture integration in the current CLI.
 
