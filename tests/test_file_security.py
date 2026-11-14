@@ -84,20 +84,32 @@ def test_windows_acl_for_private_file(monkeypatch, tmp_path):
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows ACL integration test")
 def test_windows_profile_and_cookie_acl_are_private(tmp_path):
+    import os as os_module
+
     profile = security.ensure_private_directory(tmp_path / "browser-profile")
     cookie_file = profile / "cookies.json"
     cookie_file.write_text("{}", encoding="utf-8")
     security.restrict_private_file(cookie_file)
 
     sid = security._current_user_sid()
+    script = (
+        "$acl = Get-Acl -LiteralPath $env:ACL_TEST_PATH; "
+        "$acl.Access | ForEach-Object { "
+        "$_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value "
+        "}"
+    )
     for path in (profile, cookie_file):
+        env = os_module.environ.copy()
+        env["ACL_TEST_PATH"] = str(path)
         result = subprocess.run(
-            ["icacls", str(path)],
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
             capture_output=True,
             text=True,
             check=True,
             timeout=15,
+            env=env,
         )
-        assert sid in result.stdout
+        sids = set(result.stdout.split())
+        assert sid in sids
         for group_sid in security._RESTRICTED_GROUP_SIDS:
-            assert group_sid not in result.stdout
+            assert group_sid not in sids
