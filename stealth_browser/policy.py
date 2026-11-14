@@ -18,7 +18,9 @@ def _normalize_hostname(host: str) -> str:
             ascii_host = host.encode("idna").decode("ascii")
         except UnicodeError as exc:
             raise ValueError(f"Invalid hostname: {host!r}") from exc
-        if len(ascii_host) > 253 or not all(\n            _LABEL.fullmatch(part) for part in ascii_host.split(".")\n        ):
+        if len(ascii_host) > 253 or not all(
+            _LABEL.fullmatch(part) for part in ascii_host.split(".")
+        ):
             raise ValueError(f"Invalid hostname: {host!r}")
         return ascii_host
 
@@ -59,7 +61,9 @@ def parse_allowed_hosts(value: str | None) -> tuple[str, ...]:
     """Parse comma-separated exact hosts and optional *.subdomain rules."""
     if not value or not value.strip():
         return ()
-    return tuple(\n        dict.fromkeys(normalize_host_rule(item) for item in value.split(",") if item.strip())\n    )
+    return tuple(
+        dict.fromkeys(normalize_host_rule(item) for item in value.split(",") if item.strip())
+    )
 
 
 def is_url_allowed(url: str, allowed_hosts: tuple[str, ...] | list[str]) -> bool:
