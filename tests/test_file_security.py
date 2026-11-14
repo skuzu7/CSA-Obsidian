@@ -40,7 +40,7 @@ def test_windows_acl_grants_user_system_admin_and_removes_broad_groups(monkeypat
     assert "*S-1-5-21-111-222-333-1001:(OI)(CI)F" in grant
     assert "*S-1-5-18:(OI)(CI)F" in grant
     assert "*S-1-5-32-544:(OI)(CI)F" in grant
-    removed = {call[-1] for call in calls[2:]}
+    removed = {next(arg for arg in call if arg.startswith("*S-1-")) for call in calls[2:]}
     assert removed == {f"*{sid}" for sid in security._RESTRICTED_GROUP_SIDS}
     assert all(call[0] in {"whoami", "icacls"} for call in calls)
 
@@ -84,32 +84,36 @@ def test_windows_acl_for_private_file(monkeypatch, tmp_path):
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows ACL integration test")
 def test_windows_profile_and_cookie_acl_are_private(tmp_path):
-    import os as os_module
-
     profile = security.ensure_private_directory(tmp_path / "browser-profile")
     cookie_file = profile / "cookies.json"
     cookie_file.write_text("{}", encoding="utf-8")
     security.restrict_private_file(cookie_file)
 
-    sid = security._current_user_sid()
-    script = (
-        "$acl = Get-Acl -LiteralPath $env:ACL_TEST_PATH; "
-        "$acl.Access | ForEach-Object { "
-        "$_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value "
-        "}"
+    account = subprocess.run(
+        ["whoami"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    ).stdout.strip()
+    user_name = account.rsplit("\\", 1)[-1].casefold()
+    broad_principals = (
+        "everyone",
+        "builtin\\users",
+        "authenticated users",
+        "nt authority\\interactive",
+        "remote interactive logon",
+        "nt authority\\network",
     )
     for path in (profile, cookie_file):
-        env = os_module.environ.copy()
-        env["ACL_TEST_PATH"] = str(path)
         result = subprocess.run(
-            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            ["icacls", str(path)],
             capture_output=True,
             text=True,
             check=True,
             timeout=15,
-            env=env,
         )
-        sids = set(result.stdout.split())
-        assert sid in sids
-        for group_sid in security._RESTRICTED_GROUP_SIDS:
-            assert group_sid not in sids
+        acl = result.stdout.casefold()
+        assert user_name in acl, result.stdout
+        for principal in broad_principals:
+            assert principal not in acl, result.stdout
