@@ -132,3 +132,42 @@ async def test_ensure_browser_recreates_on_dead_connection(monkeypatch):
     assert page is fresh_page
 
     srv._reset_state()
+
+
+
+def test_session_path_accepts_a_safe_name(tmp_path):
+    from mcp_server.server import _session_path
+
+    cfg = MagicMock()
+    cfg.profile_dir = tmp_path / "profiles" / "default"
+    assert _session_path(cfg, "qa-session_1") == (
+        tmp_path / "profiles" / "qa-session_1" / "cookies.json"
+    )
+
+
+def test_session_path_rejects_traversal_and_absolute_names(tmp_path):
+    from mcp_server.server import _session_path
+
+    cfg = MagicMock()
+    cfg.profile_dir = tmp_path / "profiles" / "default"
+    for name in ("../escape", "..", ".", "/tmp/escape", "a/b", r"a\\b", ""):
+        with pytest.raises(ValueError, match="Session name"):
+            _session_path(cfg, name)
+
+
+async def test_browser_get_cookies_redacts_values(monkeypatch):
+    import mcp_server.server as srv
+
+    page = MagicMock()
+    monkeypatch.setattr(srv, "_ensure_browser", AsyncMock(return_value=(MagicMock(), page, MagicMock())))
+    monkeypatch.setattr(
+        srv,
+        "get_cookies",
+        AsyncMock(return_value=[{"name": "session", "value": "bearer-secret", "domain": "example.com"}]),
+    )
+
+    result = await srv.browser_get_cookies()
+    assert result["cookies"] == [
+        {"name": "session", "value": "[REDACTED]", "domain": "example.com"}
+    ]
+    assert "bearer-secret" not in repr(result)
