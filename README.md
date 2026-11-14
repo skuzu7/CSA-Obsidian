@@ -30,12 +30,16 @@ controlled browser profile.
 
 ## ✨ Features
 
-- 🕵️ **True stealth** — [Camoufox](https://github.com/daijro/camoufox) (hardened Firefox) spoofs canvas, WebGL, fonts, and `navigator` properties; removes automation flags; blocks WebRTC IP leaks.
+- **Fingerprint customization (dual-use)** — [Camoufox](https://github.com/daijro/camoufox) changes browser-reported characteristics for controlled compatibility research. Use only on owned or explicitly authorized systems; never to bypass site protections.
 - 🧠 **LLM-native** — a **17-tool MCP server** turns any MCP client (Claude Code, Claude Desktop, …) into a browser operator. Snapshots return indexed, clickable elements an LLM can reason about.
-- 🤚 **Human behavior** — Gaussian typing cadence, multi-step scroll inertia, and **interpolated mouse drags with jitter** — no teleporting cursors.
+- **Input timing simulation** — Gaussian typing cadence, multi-step scroll timing, and interpolated mouse movement. This is automation, not proof of human activity or permission to evade anti-bot controls.
 - 🍪 **Sessions that persist** — save/restore cookies + `localStorage`, persistent profiles, and optional import from a browser profile controlled by the operator. Session exports and cookie databases must never be committed.
 - 🧰 **Three ways in** — a `stealth-browser` CLI, the MCP server, or a clean async Python API.
 - 🌐 **Proxy & locale aware** — authenticated proxies, OS/locale spoofing, configurable window size.
+
+## Security boundaries
+
+This MCP server can navigate pages, execute JavaScript in the active page, read browser cookies, intercept raw request headers, and save session state. It is **not a sandbox** and does not enforce a global host allowlist. Never connect it to personal or production browser profiles when an LLM or untrusted MCP client can inspect the session. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ## 🚀 Quickstart
 
@@ -110,7 +114,8 @@ claude mcp add stealth-browser -- stealth-browser-mcp
 stealth-browser open-page https://example.com               # snapshot to stdout
 stealth-browser open-page https://example.com --screenshot  # + save screenshot
 stealth-browser monitor https://news.site --interval 30 --checks 20
-stealth-browser binance-tokens --timeout 90
+# Sensitive legacy command — do not run against real or funded accounts:
+# stealth-browser binance-tokens --timeout 90
 ```
 
 ## ⚙️ Configuration
@@ -128,6 +133,10 @@ Copy `env.example` → `.env` and tune:
 | `STEALTH_HUMANIZE` | `true` | Human-like input simulation |
 | `STEALTH_PROXY_SERVER` | _(unset)_ | Proxy URL, e.g. `socks5://127.0.0.1:1080` |
 | `STEALTH_PROXY_USERNAME` / `_PASSWORD` | _(unset)_ | Proxy auth (optional) |
+
+### Sensitive legacy integration: Binance CSRF header capture
+
+The optional `binance-tokens` command captures a CSRF request header from the active browser session. Header values are sensitive session material. Do not run this command against a real/funded account, send its output to an LLM, log or share captured values, or use it outside an explicitly authorized test. The integration should be retired or redesigned around a synthetic/test-only fixture before security-sensitive use.
 
 ## 🐍 Python API — tasks
 
