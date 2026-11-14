@@ -6,6 +6,8 @@ from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import BrowserContext, Page
 
 from stealth_browser.config import BrowserConfig
+from stealth_browser.file_security import ensure_private_directory
+from stealth_browser.policy import is_url_allowed, safe_origin
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,7 @@ class BrowserManager:
 
     async def __aenter__(self) -> BrowserManager:
         cfg = self._config
+        cfg.profile_dir = ensure_private_directory(cfg.profile_dir)
         logger.debug("BrowserManager starting, profile=%s", cfg.profile_dir)
 
         if cfg.import_chrome_cookies:
@@ -42,9 +45,11 @@ class BrowserManager:
             block_webrtc=cfg.block_webrtc,
             proxy=cfg.proxy,
             enable_cache=cfg.enable_cache,
+            firefox_user_prefs={"dom.serviceWorkers.enabled": False},
         )
         self._context = await self._cfx.__aenter__()
-        logger.info("Browser started")
+        await self._context.route("**/*", self._route_request)
+        logger.info("Browser started; host allowlist contains %d entries", len(cfg.allowed_hosts))
 
         try:
             if self._chrome_cookies:
@@ -59,6 +64,14 @@ class BrowserManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         logger.debug("BrowserManager closing")
         await self._cfx.__aexit__(exc_type, exc_val, exc_tb)
+
+    async def _route_request(self, route) -> None:
+        url = route.request.url
+        if is_url_allowed(url, self._config.allowed_hosts):
+            await route.continue_()
+            return
+        logger.warning("Blocked browser request to disallowed origin %s", safe_origin(url))
+        await route.abort("blockedbyclient")
 
     @property
     def context(self) -> BrowserContext:
