@@ -87,7 +87,7 @@ def is_url_allowed(url: str, allowed_hosts: tuple[str, ...] | list[str]) -> bool
     except (TypeError, ValueError):
         return False
 
-    effective_port = port or (443 if scheme == "https" else 80)
+    effective_port = port if port is not None else (443 if scheme == "https" else 80)
     for raw_rule in allowed_hosts:
         try:
             rule = normalize_host_rule(raw_rule)
