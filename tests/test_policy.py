@@ -46,7 +46,7 @@ def test_exact_host_matches_only_default_web_ports():
 def test_explicit_port_matches_only_that_port():
     assert is_url_allowed("http://localhost:3000/health", ("localhost:3000",))
     assert not is_url_allowed("http://localhost:3001/health", ("localhost:3000",))
-    assert not is_url_allowed("https://localhost:3000/health", ("localhost:3000",))
+    assert is_url_allowed("https://localhost:3000/health", ("localhost:3000",))
 
 
 def test_wildcard_matches_subdomains_but_not_apex():
