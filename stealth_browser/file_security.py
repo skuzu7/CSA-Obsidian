@@ -6,7 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 
-_SID_PATTERN = re.compile(r"^S-1-\\d+(?:-\\d+){1,15}$")
+_SID_PATTERN = re.compile(r"^S-1-\d+(?:-\d+){1,15}$")
 # Broad principals must not retain inherited or explicit access to browser state.
 _RESTRICTED_GROUP_SIDS = (
     "S-1-1-0",       # Everyone
