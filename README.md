@@ -59,7 +59,8 @@ from stealth_browser.snapshot import take_snapshot
 
 
 async def main():
-    cfg = BrowserConfig(headless=True, allowed_hosts=("example.com",))\n    async with BrowserManager(cfg) as bm:
+    cfg = BrowserConfig(headless=True, allowed_hosts=("example.com",))
+    async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         await page.goto("https://example.com")
         snap = await take_snapshot(page)
@@ -110,9 +111,10 @@ claude mcp add stealth-browser -- stealth-browser-mcp
 ## 🖥️ CLI
 
 ```bash
-STEALTH_ALLOWED_HOSTS=example.com stealth-browser open-page https://example.com  # allow this host, then snapshot
+# PowerShell: $env:STEALTH_ALLOWED_HOSTS = "example.com"
+# Bash: export STEALTH_ALLOWED_HOSTS=example.com
+stealth-browser open-page https://example.com               # snapshot to stdout
 stealth-browser open-page https://example.com --screenshot  # + save screenshot
-stealth-browser monitor https://news.site --interval 30 --checks 20
 ```
 
 ## ⚙️ Configuration
@@ -121,7 +123,8 @@ Copy `env.example` → `.env` and tune:
 
 | Variable | Default | Description |
 |---|---|---|
-| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path (restricted to the current user, SYSTEM, and local Administrators) |\n| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S)_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports; e.g. `example.com,*.example.org,localhost:3000` |
+| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path (restricted to the current user, SYSTEM, and local Administrators) |
+| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S))_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports; e.g. `example.com,*.example.org,localhost:3000` |
 | `STEALTH_HEADLESS` | `false` | Headless mode |
 | `STEALTH_OS_TARGET` | `windows` | Spoofed OS (`windows`, `macos`, `linux`) |
 | `STEALTH_LOCALE` | `pt-BR,pt` | Browser locale |
@@ -164,9 +167,10 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Run `ruff check .` and `
 Use this project only with accounts, browser profiles, and systems owned by the
 operator or covered by explicit testing authorization. Keep generated profiles,
 cookie exports, session files, and credentials outside version control. MCP cookie
-values are redacted and request-header values are allowlisted; direct Python APIs
-and arbitrary page JavaScript remain privileged and must be used only in trusted
-local workflows. Review all agent actions before they affect external state.
+values are redacted and request-header values are allowlisted. The browser's HTTP(S)
+requests are constrained by the configured host allowlist; direct Python APIs and
+arbitrary page JavaScript remain privileged and must be used only in trusted local
+workflows. Review all agent actions before they affect external state.
 
 ## 📜 License
 
