@@ -38,7 +38,7 @@ controlled browser profile.
 
 ## Security boundaries
 
-This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. Session names are validated; profile/session directories and files are restricted to the current user plus SYSTEM/local Administrators on Windows, and use POSIX 0700/0600 modes. The server is still a privileged browser-control process, not a sandbox or network egress filter, and it does not enforce a global host allowlist. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
+This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. The browser context enforces a fail-closed HTTP(S) host allowlist (`STEALTH_ALLOWED_HOSTS`), with Firefox service workers disabled. Profile/session directories and files are restricted to the current user plus SYSTEM/local Administrators on Windows, and use POSIX 0700/0600 modes. This remains a privileged browser-control process, not an OS sandbox or IP-level network egress firewall. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ## 🚀 Quickstart
 
@@ -59,7 +59,7 @@ from stealth_browser.snapshot import take_snapshot
 
 
 async def main():
-    async with BrowserManager(BrowserConfig(headless=True)) as bm:
+    cfg = BrowserConfig(headless=True, allowed_hosts=("example.com",))\n    async with BrowserManager(cfg) as bm:
         page = await bm.get_page()
         await page.goto("https://example.com")
         snap = await take_snapshot(page)
