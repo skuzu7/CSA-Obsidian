@@ -22,6 +22,7 @@ def test_export_requires_explicit_destination_and_restricts_permissions(tmp_path
     assert json.loads(destination.read_text(encoding="utf-8")) == data
     if os.name == "posix":
         assert stat.S_IMODE(destination.stat().st_mode) == 0o600
+        assert stat.S_IMODE(destination.parent.stat().st_mode) == 0o700
 
 
 def test_existing_cookie_file_cannot_be_overwritten(tmp_path):
