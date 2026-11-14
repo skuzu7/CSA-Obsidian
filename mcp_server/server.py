@@ -24,13 +24,17 @@ _SESSION_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 def _session_path(cfg: BrowserConfig, name: str):
     """Resolve a named session under the configured profiles directory."""
     if not isinstance(name, str) or name in {".", ".."} or not _SESSION_NAME.fullmatch(name):
-        raise ValueError("Session name must be 1-64 safe characters: letters, digits, dot, underscore or hyphen")
+        raise ValueError(
+            "Session name must be 1-64 safe characters: letters, digits, dot, underscore or hyphen"
+        )
     base = cfg.profile_dir.parent.resolve()
     path = (base / name / "cookies.json").resolve()
     try:
         path.relative_to(base)
     except ValueError as exc:
-        raise ValueError("Session path must remain inside the configured profiles directory") from exc
+        raise ValueError(
+            "Session path must remain inside the configured profiles directory"
+        ) from exc
     return path
 
 
