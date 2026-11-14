@@ -14,12 +14,29 @@ logger = logging.getLogger(__name__)
 # redacted by default because their names do not prove their values are safe.
 SAFE_HEADER_NAMES = frozenset(
     {
-        "accept", "accept-encoding", "accept-language", "cache-control",
-        "connection", "content-length", "content-type", "dnt", "host",
-        "if-modified-since", "if-none-match", "origin", "pragma", "range",
-        "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
-        "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user",
-        "upgrade-insecure-requests", "user-agent",
+        "accept",
+        "accept-encoding",
+        "accept-language",
+        "cache-control",
+        "connection",
+        "content-length",
+        "content-type",
+        "dnt",
+        "host",
+        "if-modified-since",
+        "if-none-match",
+        "origin",
+        "pragma",
+        "range",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site",
+        "sec-fetch-user",
+        "upgrade-insecure-requests",
+        "user-agent",
     }
 )
 REDACTED = "[REDACTED]"
