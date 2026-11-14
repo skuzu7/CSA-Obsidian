@@ -261,6 +261,7 @@ async def browser_save_session(name: str = "default") -> dict:
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = _session_path(cfg, name)
+    ensure_private_directory(path.parent)
     await save_cookies(page, path)
     return {"path": str(path)}
 
@@ -272,6 +273,7 @@ async def browser_load_session(name: str = "default") -> dict:
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
     path = _session_path(cfg, name)
+    ensure_private_directory(path.parent)
     await load_cookies(page, path)
     return {"ok": True}
 
