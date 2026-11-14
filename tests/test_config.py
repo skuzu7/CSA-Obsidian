@@ -75,7 +75,6 @@ def test_typing_defaults():
     assert cfg.typing_hesitation_prob >= 0
 
 
-
 def test_from_env_allowed_hosts(monkeypatch):
     monkeypatch.setenv("STEALTH_ALLOWED_HOSTS", "example.com, *.example.org, localhost:3000")
     cfg = BrowserConfig.from_env()
