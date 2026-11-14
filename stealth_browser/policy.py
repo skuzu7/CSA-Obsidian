@@ -4,7 +4,6 @@ import ipaddress
 import re
 from urllib.parse import urlsplit
 
-
 _LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
 
