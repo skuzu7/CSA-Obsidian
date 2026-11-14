@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -15,29 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 def write_private_json(path: Path, value: Any) -> None:
-    """Atomically write sensitive session material with owner-only access."""
+    """Atomically write sensitive JSON from a private same-volume staging directory."""
     parent = Path(path.parent).expanduser()
     parent.mkdir(parents=True, exist_ok=True)
     destination = parent / path.name
-    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=parent)
+    staging_dir = Path(tempfile.mkdtemp(prefix=f".{path.name}.", dir=parent))
+    fd = -1
     try:
+        staging_dir = ensure_private_directory(staging_dir)
+        fd, temporary_name = tempfile.mkstemp(prefix="payload-", suffix=".tmp", dir=staging_dir)
+        temporary_path = Path(temporary_name)
         if os.name == "posix":
             os.fchmod(fd, 0o600)
+        restrict_private_file(temporary_path)
         with os.fdopen(fd, "w", encoding="utf-8") as file:
             fd = -1
             json.dump(value, file, indent=2, ensure_ascii=False)
             file.flush()
             os.fsync(file.fileno())
         # Replacing a symlink replaces the link itself; it never writes through it.
-        os.replace(temporary_name, destination)
-        restrict_private_file(destination)
+        os.replace(temporary_path, destination)
     finally:
         if fd >= 0:
             os.close(fd)
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
+        shutil.rmtree(staging_dir, ignore_errors=True)
 
 
 async def save_cookies(page: Page, path: Path) -> None:
