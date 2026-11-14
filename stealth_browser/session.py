@@ -14,7 +14,7 @@ from stealth_browser.file_security import ensure_private_directory, restrict_pri
 logger = logging.getLogger(__name__)
 
 
-def _write_private_json(path: Path, value: Any) -> None:
+def write_private_json(path: Path, value: Any) -> None:
     """Atomically write sensitive session material with owner-only access."""
     parent = ensure_private_directory(path.parent)
     destination = parent / path.name
@@ -41,7 +41,7 @@ def _write_private_json(path: Path, value: Any) -> None:
 
 async def save_cookies(page: Page, path: Path) -> None:
     cookies = await page.context.cookies()
-    _write_private_json(path, cookies)
+    write_private_json(path, cookies)
     logger.debug("Saved %d cookies to %s", len(cookies), path)
 
 
