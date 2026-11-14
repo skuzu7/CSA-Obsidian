@@ -1,7 +1,10 @@
 import asyncio
+import collections
 from unittest.mock import MagicMock
 
 import pytest
+
+from stealth_browser.intercept import REDACTED, RequestInterceptor
 
 
 def make_page():
@@ -13,10 +16,15 @@ def make_page():
 
 @pytest.fixture
 def interceptor():
-    from stealth_browser.intercept import RequestInterceptor
+    return RequestInterceptor(make_page(), url_pattern="*example.com*", header_names=["x-token"])
 
-    page = make_page()
-    return RequestInterceptor(page, url_pattern="*example.com*", header_names=["x-token"])
+
+def request(url="https://example.com", headers=None):
+    item = MagicMock()
+    item.url = url
+    item.method = "GET"
+    item.headers = headers or {}
+    return item
 
 
 def test_attach_registers_listener(interceptor):
@@ -30,116 +38,107 @@ def test_detach_removes_listener(interceptor):
     interceptor._page.remove_listener.assert_called_once_with("request", interceptor._on_request)
 
 
-def test_captured_is_deque(interceptor):
-    import collections
-
+def test_captured_is_bounded_deque(interceptor):
     assert isinstance(interceptor.captured, collections.deque)
     assert interceptor.captured.maxlen == 500
 
 
 async def test_context_manager_attaches_and_detaches():
-    from stealth_browser.intercept import RequestInterceptor
-
     page = make_page()
-    async with RequestInterceptor(page) as ic:
-        page.on.assert_called_once_with("request", ic._on_request)
-    page.remove_listener.assert_called_once_with("request", ic._on_request)
+    async with RequestInterceptor(page) as instance:
+        page.on.assert_called_once_with("request", instance._on_request)
+    page.remove_listener.assert_called_once_with("request", instance._on_request)
 
 
-def test_on_request_filters_by_url_pattern():
-    from stealth_browser.intercept import RequestInterceptor
-
-    page = make_page()
-    ic = RequestInterceptor(page, url_pattern="*binance.com*")
-
-    req_match = MagicMock()
-    req_match.url = "https://api.binance.com/api/v3/ping"
-    req_match.method = "GET"
-    req_match.headers = {"x-token": "abc"}
-
-    req_no_match = MagicMock()
-    req_no_match.url = "https://google.com"
-    req_no_match.method = "GET"
-    req_no_match.headers = {}
-
-    ic._on_request(req_match)
-    ic._on_request(req_no_match)
-
-    assert len(ic.captured) == 1
-    assert ic.captured[0]["url"] == "https://api.binance.com/api/v3/ping"
+def test_on_request_filters_by_url_pattern_and_stores_origin_only():
+    instance = RequestInterceptor(make_page(), url_pattern="*example.com*")
+    instance._on_request(
+        request(
+            "https://user:password@example.com/api/v1?token=never-store-this#fragment",
+            {"content-type": "application/json"},
+        )
+    )
+    instance._on_request(request("https://google.com/path", {"content-type": "text/html"}))
+    assert len(instance.captured) == 1
+    assert instance.captured[0]["url"] == "https://example.com"
+    assert "password" not in repr(instance.captured)
+    assert "never-store-this" not in repr(instance.captured)
+    assert "fragment" not in repr(instance.captured)
 
 
-def test_on_request_filters_by_header_names():
-    from stealth_browser.intercept import RequestInterceptor
-
-    page = make_page()
-    ic = RequestInterceptor(page, url_pattern="*", header_names=["x-token"])
-
-    req_with_header = MagicMock()
-    req_with_header.url = "https://example.com"
-    req_with_header.method = "GET"
-    req_with_header.headers = {"x-token": "abc123", "content-type": "json"}
-
-    req_without_header = MagicMock()
-    req_without_header.url = "https://example.com/img"
-    req_without_header.method = "GET"
-    req_without_header.headers = {"content-type": "image/png"}
-
-    ic._on_request(req_with_header)
-    ic._on_request(req_without_header)
-
-    assert len(ic.captured) == 1
-
-
-async def test_wait_for_header_finds_existing():
-    from stealth_browser.intercept import RequestInterceptor
-
-    page = make_page()
-    ic = RequestInterceptor(page)
-
-    ic.captured.append({"url": "https://x.com", "method": "GET", "headers": {"x-token": "val123"}})
-    ic._event.set()
-
-    result = await ic.wait_for_header("x-token", timeout=1.0)
-    assert result == "val123"
+def test_sensitive_and_unknown_header_values_are_redacted():
+    instance = RequestInterceptor(make_page())
+    instance._on_request(
+        request(
+            headers={
+                "content-type": "application/json",
+                "authorization": "Bearer never-store-this",
+                "cookie": "session=never-store-this",
+                "x-api-key": "never-store-this",
+                "x-csrf-token": "never-store-this",
+                "x-trace-id": "custom-value",
+                "referer": "https://example.com/private?token=never-store-this",
+            }
+        )
+    )
+    headers = instance.captured[0]["headers"]
+    assert headers["content-type"] == "application/json"
+    for name in ("authorization", "cookie", "x-api-key", "x-csrf-token", "x-trace-id", "referer"):
+        assert headers[name] == REDACTED
+    assert "never-store-this" not in repr(instance.captured)
+    assert "custom-value" not in repr(instance.captured)
 
 
-async def test_wait_for_header_case_insensitive():
-    from stealth_browser.intercept import RequestInterceptor
+def test_header_filter_only_stores_selected_names_and_redacts_custom_values():
+    instance = RequestInterceptor(make_page(), header_names=["x-token"])
+    instance._on_request(
+        request(headers={"x-token": "secret-value", "content-type": "application/json"})
+    )
+    assert instance.captured[0]["headers"] == {"x-token": REDACTED}
 
-    page = make_page()
-    ic = RequestInterceptor(page)
 
-    ic.captured.append({"url": "https://x.com", "method": "GET", "headers": {"X-Token": "ABC"}})
-    ic._event.set()
+async def test_wait_for_header_finds_existing_allowlisted_header():
+    instance = RequestInterceptor(make_page())
+    instance.captured.append(
+        {"url": "https://x.com", "method": "GET", "headers": {"content-type": "application/json"}}
+    )
+    assert await instance.wait_for_header("content-type", timeout=1.0) == "application/json"
 
-    result = await ic.wait_for_header("x-token", timeout=1.0)
-    assert result == "ABC"
+
+async def test_wait_for_header_is_case_insensitive():
+    instance = RequestInterceptor(make_page())
+    instance.captured.append(
+        {"url": "https://x.com", "method": "GET", "headers": {"Content-Type": "application/json"}}
+    )
+    assert await instance.wait_for_header("CONTENT-TYPE", timeout=1.0) == "application/json"
+
+
+async def test_wait_for_header_rejects_sensitive_or_custom_names():
+    instance = RequestInterceptor(make_page())
+    for name in ("authorization", "cookie", "x-api-key", "x-token", "x-csrf-token"):
+        with pytest.raises(ValueError, match="allowlisted"):
+            await instance.wait_for_header(name, timeout=0.01)
 
 
 async def test_wait_for_header_timeout():
-    from stealth_browser.intercept import RequestInterceptor
-
-    page = make_page()
-    ic = RequestInterceptor(page)
-
+    instance = RequestInterceptor(make_page())
     with pytest.raises(TimeoutError):
-        await ic.wait_for_header("missing-header", timeout=0.05)
+        await instance.wait_for_header("content-type", timeout=0.05)
 
 
 async def test_wait_for_header_triggered_by_event():
-    from stealth_browser.intercept import RequestInterceptor
-
-    page = make_page()
-    ic = RequestInterceptor(page)
+    instance = RequestInterceptor(make_page())
 
     async def inject_after_delay():
         await asyncio.sleep(0.05)
-        ic.captured.append(
-            {"url": "https://x.com", "method": "GET", "headers": {"auth": "token42"}}
+        instance.captured.append(
+            {
+                "url": "https://x.com",
+                "method": "GET",
+                "headers": {"content-type": "application/json"},
+            }
         )
-        ic._event.set()
+        instance._event.set()
 
     asyncio.create_task(inject_after_delay())
-    result = await ic.wait_for_header("auth", timeout=1.0)
-    assert result == "token42"
+    assert await instance.wait_for_header("content-type", timeout=1.0) == "application/json"
