@@ -13,7 +13,6 @@ authorized to test.
 [![Built on Camoufox](https://img.shields.io/badge/stealth-Camoufox-orange.svg)](https://github.com/daijro/camoufox)
 [![MCP](https://img.shields.io/badge/MCP-17_tools-8A2BE2.svg)](https://modelcontextprotocol.io/)
 [![CI & Python Tests](https://github.com/skuzu7/CSA-Obsidian/actions/workflows/ci.yml/badge.svg)](https://github.com/skuzu7/CSA-Obsidian/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-63_passing-brightgreen.svg)](#-tests)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](CONTRIBUTING.md)
 
 </div>
@@ -39,7 +38,7 @@ controlled browser profile.
 
 ## Security boundaries
 
-This MCP server can navigate pages, execute JavaScript in the active page, read browser cookies, intercept raw request headers, and save session state. It is **not a sandbox** and does not enforce a global host allowlist. Never connect it to personal or production browser profiles when an LLM or untrusted MCP client can inspect the session. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
+This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted. Session names are validated and POSIX session files are owner-only (0600). The server is still a privileged browser-control process, not a sandbox or network egress filter, and it does not enforce a global host allowlist. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ## 🚀 Quickstart
 
@@ -114,8 +113,6 @@ claude mcp add stealth-browser -- stealth-browser-mcp
 stealth-browser open-page https://example.com               # snapshot to stdout
 stealth-browser open-page https://example.com --screenshot  # + save screenshot
 stealth-browser monitor https://news.site --interval 30 --checks 20
-# Sensitive legacy command — do not run against real or funded accounts:
-# stealth-browser binance-tokens --timeout 90
 ```
 
 ## ⚙️ Configuration
@@ -134,31 +131,6 @@ Copy `env.example` → `.env` and tune:
 | `STEALTH_PROXY_SERVER` | _(unset)_ | Proxy URL, e.g. `socks5://127.0.0.1:1080` |
 | `STEALTH_PROXY_USERNAME` / `_PASSWORD` | _(unset)_ | Proxy auth (optional) |
 
-### Sensitive legacy integration: Binance CSRF header capture
-
-The optional `binance-tokens` command captures a CSRF request header from the active browser session. Header values are sensitive session material. Do not run this command against a real/funded account, send its output to an LLM, log or share captured values, or use it outside an explicitly authorized test. The integration should be retired or redesigned around a synthetic/test-only fixture before security-sensitive use.
-
-## 🐍 Python API — tasks
-
-```python
-import asyncio
-from stealth_browser.browser import BrowserManager
-from stealth_browser.config import BrowserConfig
-from stealth_browser.humanize import HumanBehavior
-from tasks.trading.binance import BinanceTokenTask
-
-
-async def main():
-    cfg = BrowserConfig(headless=True)
-    async with BrowserManager(cfg) as bm:
-        page = await bm.get_page()
-        task = BinanceTokenTask(page, HumanBehavior(cfg), cfg)
-        print(await task.run(timeout=90))
-
-
-asyncio.run(main())
-```
-
 ## 🧪 Tests
 
 ```bash
@@ -166,7 +138,7 @@ pip install -e ".[dev]"
 pytest --cov --cov-report=term-missing -q
 ```
 
-**63 tests**, covering errors, config, snapshot, request interception, the MCP layer, and page ops. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md) for the full design.
+The test suite covers errors, configuration, snapshots, request-interception redaction, session-file permissions, MCP session-name validation, and page operations. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md) for the full design.
 
 ## 🗂️ Project structure
 
@@ -174,8 +146,8 @@ pytest --cov --cov-report=term-missing -q
 automation-stealth/
 ├── stealth_browser/    # Core: browser, config, humanize, snapshot, page_ops, intercept, session, errors
 ├── mcp_server/         # FastMCP server (17 tools) + concurrency lock + error decorator
-├── cli/                # Click CLI (open-page, monitor, binance-tokens)
-├── tasks/              # BinanceTokenTask, PageMonitorTask, FormFillTask
+├── cli/                # Click CLI (open-page, monitor)
+├── tasks/              # PageMonitorTask, FormFillTask, InstagramTask
 ├── tests/              # pytest suite (asyncio)
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -191,9 +163,10 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Run `ruff check .` and `
 
 Use this project only with accounts, browser profiles, and systems owned by the
 operator or covered by explicit testing authorization. Keep generated profiles,
-cookie exports, session files, and credentials outside version control. Review
-all agent actions before they affect external state, and use redacted fixtures
-for tests and bug reports.
+cookie exports, session files, and credentials outside version control. MCP cookie
+values are redacted and request-header values are allowlisted; direct Python APIs
+and arbitrary page JavaScript remain privileged and must be used only in trusted
+local workflows. Review all agent actions before they affect external state.
 
 ## 📜 License
 
