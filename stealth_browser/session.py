@@ -10,7 +10,7 @@ from typing import Any
 
 from playwright.async_api import Page
 
-from stealth_browser.file_security import restrict_private_file
+from stealth_browser.file_security import ensure_private_directory, restrict_private_file
 
 logger = logging.getLogger(__name__)
 
