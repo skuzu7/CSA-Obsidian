@@ -18,7 +18,7 @@ The MCP server exposes browser navigation, interaction, screenshots, page text, 
 - `browser_evaluate` executes caller-supplied JavaScript in the active page context.
 - `browser_get_cookies` returns cookies from the active browser context.
 - Session save/load functions can read and write cookie and storage state.
-- The host policy is fail-closed: an empty or unset allowlist denies all HTTP(S) requests. Entries are exact DNS/IP hosts, `*.domain` subdomain rules, and optional explicit ports; a host without a port matches only HTTP 80 or HTTPS 443. `about:blank`, `data:`, and `blob:` are local browser resources; other schemes are rejected by the navigation policy.
+- The host policy is fail-closed: an empty or unset allowlist denies all HTTP(S) requests. Entries are exact DNS/IP hosts, `*.domain` subdomain rules, and optional explicit ports; a host without a port matches only HTTP 80 or HTTPS 443, while an explicit host:port rule allows that port over either HTTP or HTTPS. `about:blank`, `data:`, and `blob:` are local browser resources; other schemes are rejected by the navigation policy.
 - The browser context uses Playwright routing and disables Firefox service workers (`dom.serviceWorkers.enabled=false`) so service-worker requests cannot bypass route interception. Named session paths reject traversal and absolute names.
 - This is not an OS sandbox or IP-level egress firewall. It does not pin DNS answers or prevent an allowlisted hostname from resolving to a private address; use an OS/network firewall for that threat.
 - `browser_get_cookies` returns cookie metadata with each cookie `value` replaced by `[REDACTED]`. Direct Python APIs and arbitrary page JavaScript remain privileged surfaces.
