@@ -41,7 +41,7 @@ The project supports reading and persisting browser state. These behaviors must 
 - Session storage helpers read and write localStorage and sessionStorage values for a supplied origin.
 - Persistent browser profiles may retain authenticated state between runs.
 - `chrome_cookies.py` can decrypt cookies from the operator's own Chrome profile. Its default path keeps values in memory; an explicit export path is required for file output.
-- The dedicated Chrome export helper uses exclusive creation, then applies the same POSIX 0700/0600 or Windows `icacls` policy to the destination directory and file. Its temporary database copy is also created inside a restricted temporary directory.
+- The dedicated Chrome export helper uses exclusive creation and applies the POSIX 0600 or Windows `icacls` file policy before writing cookie values. It does not change permissions on the caller's chosen parent directory. Its temporary database copy is created inside a restricted temporary directory.
 
 A cookie or session export can function as a bearer credential. Prefer synthetic test accounts and short-lived sessions. Store any explicitly authorized export outside synced/shared folders, restrict filesystem access, never commit it, and revoke the session if exposure is suspected.
 
