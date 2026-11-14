@@ -48,9 +48,7 @@ async def test_save_cookies_replaces_symlink_without_following_target(tmp_path):
 
     await save_cookies(page, link)
     assert not link.is_symlink()
-    assert json.loads(link.read_text(encoding="utf-8")) == [
-        {"name": "x", "value": "secret"}
-    ]
+    assert json.loads(link.read_text(encoding="utf-8")) == [{"name": "x", "value": "secret"}]
     assert target.read_text(encoding="utf-8") == "keep"
 
 
