@@ -134,7 +134,6 @@ async def test_ensure_browser_recreates_on_dead_connection(monkeypatch):
     srv._reset_state()
 
 
-
 def test_session_path_accepts_a_safe_name(tmp_path):
     from mcp_server.server import _session_path
 
@@ -159,11 +158,15 @@ async def test_browser_get_cookies_redacts_values(monkeypatch):
     import mcp_server.server as srv
 
     page = MagicMock()
-    monkeypatch.setattr(srv, "_ensure_browser", AsyncMock(return_value=(MagicMock(), page, MagicMock())))
+    monkeypatch.setattr(
+        srv, "_ensure_browser", AsyncMock(return_value=(MagicMock(), page, MagicMock()))
+    )
     monkeypatch.setattr(
         srv,
         "get_cookies",
-        AsyncMock(return_value=[{"name": "session", "value": "bearer-secret", "domain": "example.com"}]),
+        AsyncMock(
+            return_value=[{"name": "session", "value": "bearer-secret", "domain": "example.com"}]
+        ),
     )
 
     result = await srv.browser_get_cookies()
