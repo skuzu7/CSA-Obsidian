@@ -4,6 +4,7 @@ import asyncio
 import collections
 import fnmatch
 import logging
+from urllib.parse import urlsplit, urlunsplit
 
 from playwright.async_api import Page, Request
 
@@ -16,12 +17,22 @@ SAFE_HEADER_NAMES = frozenset(
         "accept", "accept-encoding", "accept-language", "cache-control",
         "connection", "content-length", "content-type", "dnt", "host",
         "if-modified-since", "if-none-match", "origin", "pragma", "range",
-        "referer", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+        "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
         "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user",
         "upgrade-insecure-requests", "user-agent",
     }
 )
 REDACTED = "[REDACTED]"
+
+
+def _safe_origin(url: str) -> str:
+    """Keep only scheme and host; paths, query strings and fragments may hold secrets."""
+    try:
+        parts = urlsplit(url)
+        host = parts.netloc.rsplit("@", 1)[-1]
+        return urlunsplit((parts.scheme, host, "", "", ""))
+    except ValueError:
+        return "[INVALID_URL]"
 
 
 class RequestInterceptor:
@@ -56,8 +67,9 @@ class RequestInterceptor:
             name: value if name.lower() in SAFE_HEADER_NAMES else REDACTED
             for name, value in selected
         }
-        logger.debug("Captured request metadata: %s", request.url)
-        self.captured.append({"url": request.url, "method": request.method, "headers": headers})
+        safe_origin = _safe_origin(request.url)
+        logger.debug("Captured request metadata for origin: %s", safe_origin)
+        self.captured.append({"url": safe_origin, "method": request.method, "headers": headers})
         self._event.set()
 
     def attach(self) -> None:
