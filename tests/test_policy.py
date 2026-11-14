@@ -1,6 +1,6 @@
 import pytest
 
-from stealth_browser.policy import is_url_allowed, normalize_host_rule, parse_allowed_hosts, safe_origin
+from stealth_browser.policy import (\n    is_url_allowed,\n    normalize_host_rule,\n    parse_allowed_hosts,\n    safe_origin,\n)
 
 
 def test_parse_allowed_hosts_normalizes_and_deduplicates():
