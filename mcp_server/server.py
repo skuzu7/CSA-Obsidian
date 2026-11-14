@@ -11,6 +11,7 @@ from playwright.async_api import Locator, Page
 from stealth_browser.browser import BrowserManager
 from stealth_browser.config import BrowserConfig
 from stealth_browser.errors import RefStale
+from stealth_browser.file_security import ensure_private_directory
 from stealth_browser.humanize import HumanBehavior
 from stealth_browser.page_ops import evaluate, extract_text, get_cookies, screenshot_b64
 from stealth_browser.policy import is_url_allowed
