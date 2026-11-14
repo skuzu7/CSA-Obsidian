@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from functools import wraps
 
 from mcp.server.fastmcp import FastMCP
@@ -16,6 +17,22 @@ from stealth_browser.session import load_cookies, save_cookies
 from stealth_browser.snapshot import RefElement, take_snapshot
 
 logger = logging.getLogger(__name__)
+
+_SESSION_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def _session_path(cfg: BrowserConfig, name: str):
+    """Resolve a named session under the configured profiles directory."""
+    if not isinstance(name, str) or name in {".", ".."} or not _SESSION_NAME.fullmatch(name):
+        raise ValueError("Session name must be 1-64 safe characters: letters, digits, dot, underscore or hyphen")
+    base = cfg.profile_dir.parent.resolve()
+    path = (base / name / "cookies.json").resolve()
+    try:
+        path.relative_to(base)
+    except ValueError as exc:
+        raise ValueError("Session path must remain inside the configured profiles directory") from exc
+    return path
+
 
 mcp = FastMCP("stealth-browser")
 
@@ -211,7 +228,10 @@ async def browser_get_cookies() -> dict:
     """Return all cookies for the current page context as a list of cookie objects."""
     _, page, _ = await _ensure_browser()
     cookies = await get_cookies(page)
-    return {"cookies": cookies}
+    # Cookie values are bearer credentials. Expose metadata to the agent, not
+    # the values themselves; local session persistence remains a separate tool.
+    redacted = [{**cookie, "value": "[REDACTED]"} for cookie in cookies]
+    return {"cookies": redacted}
 
 
 @mcp.tool()
@@ -229,8 +249,7 @@ async def browser_save_session(name: str = "default") -> dict:
     """Save current browser cookies to a named session file for later restoration."""
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
-    path = cfg.profile_dir.parent / name / "cookies.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = _session_path(cfg, name)
     await save_cookies(page, path)
     return {"path": str(path)}
 
@@ -241,7 +260,7 @@ async def browser_load_session(name: str = "default") -> dict:
     """Load cookies from a previously saved named session into the current browser context."""
     _, page, _ = await _ensure_browser()
     cfg = BrowserConfig.from_env()
-    path = cfg.profile_dir.parent / name / "cookies.json"
+    path = _session_path(cfg, name)
     await load_cookies(page, path)
     return {"ok": True}
 
