@@ -6,21 +6,29 @@ import json
 import os
 from pathlib import Path
 
+from stealth_browser.file_security import ensure_private_directory, restrict_private_file
+
 
 def persist_cookie_export(cookies: list[dict], output: Path | None) -> Path | None:
     """Keep cookies in memory unless a caller explicitly supplies a new file path.
 
-    On POSIX, creation is owner-only (0600). On Windows the parent directory's
-    ACL can still affect access; do not treat filesystem mode as an ACL audit.
+    The parent directory and exported file are restricted on both POSIX and Windows.
+    Existing destinations are never overwritten.
     """
     if output is None:
         return None
 
-    destination = Path(output)
-    fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    requested = Path(output).expanduser()
+    parent = ensure_private_directory(requested.parent)
+    destination = parent / requested.name
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    fd = os.open(destination, flags, 0o600)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as file:
             json.dump(cookies, file, indent=2, ensure_ascii=False)
+            file.flush()
+            os.fsync(file.fileno())
+        restrict_private_file(destination)
     except Exception:
         destination.unlink(missing_ok=True)
         raise
