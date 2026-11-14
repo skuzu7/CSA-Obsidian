@@ -9,6 +9,20 @@ from playwright.async_api import Page, Request
 
 logger = logging.getLogger(__name__)
 
+# Only ordinary protocol metadata is exposed. Unknown/custom headers are
+# redacted by default because their names do not prove their values are safe.
+SAFE_HEADER_NAMES = frozenset(
+    {
+        "accept", "accept-encoding", "accept-language", "cache-control",
+        "connection", "content-length", "content-type", "dnt", "host",
+        "if-modified-since", "if-none-match", "origin", "pragma", "range",
+        "referer", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+        "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user",
+        "upgrade-insecure-requests", "user-agent",
+    }
+)
+REDACTED = "[REDACTED]"
+
 
 class RequestInterceptor:
     def __init__(
@@ -19,19 +33,30 @@ class RequestInterceptor:
     ) -> None:
         self._page = page
         self._url_pattern = url_pattern
-        self._header_names = [h.lower() for h in header_names] if header_names else None
+        self._header_names = {h.lower() for h in header_names} if header_names else None
         self.captured: collections.deque[dict] = collections.deque(maxlen=500)
         self._event = asyncio.Event()
 
     def _on_request(self, request: Request) -> None:
         if not fnmatch.fnmatch(request.url, self._url_pattern):
             return
-        headers = dict(request.headers)
-        if self._header_names is not None:
-            headers_lower = {k.lower() for k in headers}
-            if not any(name in headers_lower for name in self._header_names):
-                return
-        logger.debug("Captured request: %s", request.url)
+        raw_headers = dict(request.headers)
+        raw_names = {name.lower() for name in raw_headers}
+        if self._header_names is not None and not self._header_names.intersection(raw_names):
+            return
+        if self._header_names is None:
+            selected = raw_headers.items()
+        else:
+            selected = (
+                (name, value)
+                for name, value in raw_headers.items()
+                if name.lower() in self._header_names
+            )
+        headers = {
+            name: value if name.lower() in SAFE_HEADER_NAMES else REDACTED
+            for name, value in selected
+        }
+        logger.debug("Captured request metadata: %s", request.url)
         self.captured.append({"url": request.url, "method": request.method, "headers": headers})
         self._event.set()
 
@@ -50,13 +75,18 @@ class RequestInterceptor:
 
     async def wait_for_header(self, header_name: str, timeout: float = 30.0) -> str:
         needle = header_name.lower()
+        if needle not in SAFE_HEADER_NAMES:
+            raise ValueError(
+                f"Header '{header_name}' is not allowlisted for value access; "
+                "sensitive and custom header values are redacted"
+            )
         try:
             async with asyncio.timeout(timeout):
                 while True:
                     for record in self.captured:
-                        for k, v in record["headers"].items():
-                            if k.lower() == needle:
-                                return v
+                        for name, value in record["headers"].items():
+                            if name.lower() == needle:
+                                return value
                     snapshot_len = len(self.captured)
                     self._event.clear()
                     if len(self.captured) > snapshot_len:
