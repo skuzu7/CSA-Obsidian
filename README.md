@@ -38,7 +38,7 @@ controlled browser profile.
 
 ## Security boundaries
 
-This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. Session names are validated and POSIX session files are owner-only (0600). The server is still a privileged browser-control process, not a sandbox or network egress filter, and it does not enforce a global host allowlist. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
+This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. Session names are validated; profile/session directories and files are restricted to the current user plus SYSTEM/local Administrators on Windows, and use POSIX 0700/0600 modes. The server is still a privileged browser-control process, not a sandbox or network egress filter, and it does not enforce a global host allowlist. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ## 🚀 Quickstart
 
@@ -110,7 +110,7 @@ claude mcp add stealth-browser -- stealth-browser-mcp
 ## 🖥️ CLI
 
 ```bash
-stealth-browser open-page https://example.com               # snapshot to stdout
+STEALTH_ALLOWED_HOSTS=example.com stealth-browser open-page https://example.com  # allow this host, then snapshot
 stealth-browser open-page https://example.com --screenshot  # + save screenshot
 stealth-browser monitor https://news.site --interval 30 --checks 20
 ```
@@ -121,7 +121,7 @@ Copy `env.example` → `.env` and tune:
 
 | Variable | Default | Description |
 |---|---|---|
-| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path |
+| `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path (restricted to the current user, SYSTEM, and local Administrators) |\n| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S)_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports; e.g. `example.com,*.example.org,localhost:3000` |
 | `STEALTH_HEADLESS` | `false` | Headless mode |
 | `STEALTH_OS_TARGET` | `windows` | Spoofed OS (`windows`, `macos`, `linux`) |
 | `STEALTH_LOCALE` | `pt-BR,pt` | Browser locale |
