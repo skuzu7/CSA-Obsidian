@@ -18,24 +18,23 @@ The MCP server exposes browser navigation, interaction, screenshots, page text, 
 - `browser_evaluate` executes caller-supplied JavaScript in the active page context.
 - `browser_get_cookies` returns cookies from the active browser context.
 - Session save/load functions can read and write cookie and storage state.
-- The MCP server is an automation interface, not an OS sandbox, network egress filter, or authorization policy engine.
+- The MCP server is an automation interface, not an OS sandbox, network egress filter, or complete authorization policy engine. Named session paths reject traversal and absolute names.
+- `browser_get_cookies` returns cookie metadata with each cookie `value` replaced by `[REDACTED]`. Direct Python APIs and arbitrary page JavaScript remain privileged surfaces.
 
 An MCP client or model must not be treated as a trusted authorization authority. The operator must independently constrain the target, profile, account, permitted actions, and data exposed to the client.
 
 ## 3. Request interception and sensitive headers
 
-The current `RequestInterceptor` implementation stores matching request URLs, methods, and the **full request-header dictionary** in an in-memory deque (up to 500 records). It does not redact Cookie, Authorization, CSRF, or other sensitive headers automatically.
+`RequestInterceptor` stores matching request URLs, methods, and selected header names in a bounded in-memory deque. It exposes values only for a small allowlist of ordinary protocol metadata (for example `content-type` and `user-agent`). All unknown/custom headers and known sensitive headers are replaced with `[REDACTED]`; `wait_for_header` rejects names outside the allowlist. Tests cover authorization, cookies, API keys, CSRF headers, and custom trace/token headers.
 
-The Binance-specific `BinanceTokenTask` explicitly waits for and returns the `csrftoken` header (and retains matching request records). The CLI exposes this through `stealth-browser binance-tokens`.
-
-Treat all captured header values as secrets. Do not run this integration against a real or funded account, do not forward captured values to an LLM, do not write them to logs or reports, and do not share them. The presence of this command is a sensitive legacy capability and should be reviewed for removal or replacement with a synthetic/test-only fixture.
+The service-specific Binance CSRF-token task, CLI command, and Python example have been removed. There is no service-specific token-capture integration in the current CLI.
 
 ## 4. Cookies, sessions, and storage persistence
 
 The project supports reading and persisting browser state. These behaviors must not be described as “zero credential persistence”:
 
 - The browser context can expose cookies to the application.
-- `stealth_browser/session.py` writes cookie dictionaries to JSON with ordinary file writing; this function does not itself enforce restrictive permissions or exclusive file creation.
+- `stealth_browser/session.py` writes cookie dictionaries to JSON with owner-only mode `0600` on POSIX, including when an existing file's permissions need tightening. It uses `O_NOFOLLOW` where supported. Windows mode bits are not an ACL; Windows directory permissions still need separate review.
 - Session storage helpers read and write localStorage and sessionStorage values for a supplied origin.
 - Persistent browser profiles may retain authenticated state between runs.
 - `chrome_cookies.py` can decrypt cookies from the operator's own Chrome profile. Its default path keeps values in memory; an explicit export path is required for file output.
@@ -61,17 +60,16 @@ Permitted purpose: controlled browser compatibility, QA, accessibility, and eval
 1. Use synthetic accounts and data wherever possible.
 2. Do not load personal or production browser profiles into an LLM-connected MCP session.
 3. Never capture, export, or reuse credentials, cookies, CSRF tokens, or session material belonging to another person or service.
-4. Do not run the Binance-specific token capture command against a real account; retire or redesign it as a test-only integration before recommending this project for security-sensitive use.
+4. The Binance-specific token-capture task and CLI command have been removed; do not reintroduce service-specific session-token capture.
 5. Do not expose the browser MCP server to untrusted clients or remote networks.
 6. Do not claim sandboxing, automatic secret redaction, or zero credential persistence unless those controls are implemented and tested.
 
 ## 8. Remaining engineering work
 
-- Remove or isolate the service-specific token-capture task behind a synthetic/test-only fixture.
-- Add default redaction for sensitive request headers and tests proving raw values are not logged or serialized.
-- Harden generic session exports with restrictive file permissions, exclusive creation, and platform-specific ACL guidance.
 - Add an explicit host allowlist and per-tool authorization policy before using the MCP server with untrusted agent plans.
-- Add tests for denied origins, sensitive-header redaction, storage export, and session file permissions.
+- Review Windows ACLs for the profiles and session directories; POSIX mode bits do not enforce Windows access control.
+- Consider a separate policy for direct Python cookie access and arbitrary page JavaScript.
+- Have an independent reviewer inspect the resulting code and threat model.
 - Have an independent reviewer inspect the resulting code and threat model.
 
 **Scope:** this document does not authorize testing of any third-party system. See [SECURITY.md](../SECURITY.md) for reporting and use restrictions.
