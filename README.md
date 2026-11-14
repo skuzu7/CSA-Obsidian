@@ -124,7 +124,7 @@ Copy `env.example` → `.env` and tune:
 | Variable | Default | Description |
 |---|---|---|
 | `STEALTH_PROFILE_DIR` | `profiles/default` | Persistent browser profile path (restricted to the current user, SYSTEM, and local Administrators) |
-| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S))_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports; e.g. `example.com,*.example.org,localhost:3000` |
+| `STEALTH_ALLOWED_HOSTS` | _(unset; deny all HTTP(S))_ | Comma-separated exact hosts, `*.subdomains`, and optional explicit ports (an explicit port is scheme-agnostic); e.g. `example.com,*.example.org,localhost:3000` |
 | `STEALTH_HEADLESS` | `false` | Headless mode |
 | `STEALTH_OS_TARGET` | `windows` | Spoofed OS (`windows`, `macos`, `linux`) |
 | `STEALTH_LOCALE` | `pt-BR,pt` | Browser locale |
