@@ -9,12 +9,12 @@ from pathlib import Path
 _SID_PATTERN = re.compile(r"^S-1-\d+(?:-\d+){1,15}$")
 # Broad principals must not retain inherited or explicit access to browser state.
 _RESTRICTED_GROUP_SIDS = (
-    "S-1-1-0",       # Everyone
+    "S-1-1-0",  # Everyone
     "S-1-5-32-545",  # Builtin Users
-    "S-1-5-11",      # Authenticated Users
-    "S-1-5-4",       # Interactive
-    "S-1-5-14",      # Remote Interactive Logon
-    "S-1-5-2",       # Network
+    "S-1-5-11",  # Authenticated Users
+    "S-1-5-4",  # Interactive
+    "S-1-5-14",  # Remote Interactive Logon
+    "S-1-5-2",  # Network
 )
 _SYSTEM_SID = "S-1-5-18"
 _ADMINISTRATORS_SID = "S-1-5-32-544"
