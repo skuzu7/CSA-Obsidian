@@ -56,11 +56,7 @@ def main() -> int:
         check=True,
         capture_output=True,
     )
-    tracked = [
-        x.decode("utf-8", errors="replace")
-        for x in result.stdout.split(b"\0")
-        if x
-    ]
+    tracked = [x.decode("utf-8", errors="replace") for x in result.stdout.split(b"\0") if x]
     blocked = sorted(p for p in tracked if is_sensitive_path(p))
     if blocked:
         print("ERROR: tracked files resemble browser-state or secret material:")
