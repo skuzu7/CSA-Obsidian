@@ -4,19 +4,34 @@ This is a repository *path* audit, not a secret-value scanner or proof that
 sensitive content is absent from previous Git history.
 Run: python -m scripts.check_sensitive_paths
 """
+
 from __future__ import annotations
 
 import subprocess
 from pathlib import PurePosixPath
 
 PRIVATE_DIRS = {
-    "profiles", "sessions", "browser-profiles", "browser_profiles",
-    "user-data", "user_data", "session-exports", "session_exports",
+    "profiles",
+    "sessions",
+    "browser-profiles",
+    "browser_profiles",
+    "user-data",
+    "user_data",
+    "session-exports",
+    "session_exports",
 }
 PRIVATE_FILES = {
-    ".env", "cookies", "cookies.json", "cookies.txt", "cookies.sqlite",
-    "cookie_dump.json", "storage_state.json", "storage-state.json",
-    "session_state.json", "session-state.json", "login_state.json",
+    ".env",
+    "cookies",
+    "cookies.json",
+    "cookies.txt",
+    "cookies.sqlite",
+    "cookie_dump.json",
+    "storage_state.json",
+    "storage-state.json",
+    "session_state.json",
+    "session-state.json",
+    "login_state.json",
 }
 PRIVATE_EXTENSIONS = {".pem", ".p12", ".pfx", ".key", ".har", ".sqlite3"}
 
@@ -37,9 +52,13 @@ def is_sensitive_path(path: str) -> bool:
 
 def main() -> int:
     result = subprocess.run(
-        ["git", "ls-files", "-z"], check=True, capture_output=True,
+        ["git", "ls-files", "-z"],
+        check=True,
+        capture_output=True,
     )
-    tracked = [x.decode("utf-8", errors="replace") for x in result.stdout.split(b"\0") if x]
+    tracked = [
+        x.decode("utf-8", errors="replace") for x in result.stdout.split(b"\0") if x
+    ]
     blocked = sorted(p for p in tracked if is_sensitive_path(p))
     if blocked:
         print("ERROR: tracked files resemble browser-state or secret material:")
