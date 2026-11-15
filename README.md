@@ -36,6 +36,19 @@ controlled browser profile.
 - 🧰 **Three ways in** — a `stealth-browser` CLI, the MCP server, or a clean async Python API.
 - 🌐 **Proxy & locale aware** — authenticated proxies, OS/locale spoofing, configurable window size.
 
+## Institutional assurance boundaries
+
+The [assurance case](docs/ASSURANCE_CASE.md) maps host allowlist, cookie redaction,
+file protection and CI checks to concrete tests. A new tracked-file guard rejects
+browser-state and secret-like artifact **paths** in pull requests. These are
+*local defensive controls*; they do not establish a production sandbox,
+independent accreditation, government authorization or Anthropic CVP access.
+
+```bash
+python -m scripts.check_sensitive_paths
+pytest -q tests/test_sensitive_path_guard.py
+```
+
 ## Security boundaries
 
 This MCP server can navigate pages, execute JavaScript in the active page, inspect cookie metadata, intercept request metadata, and save session state. Cookie values returned to MCP clients are redacted; request values are exposed only for a small allowlist of ordinary protocol headers, with unknown/custom values redacted; captured URLs retain only scheme and host. The browser context enforces a fail-closed HTTP(S) host allowlist (`STEALTH_ALLOWED_HOSTS`), with Firefox service workers disabled. Profile/session directories and files are restricted to the current user plus SYSTEM/local Administrators on Windows, and use POSIX 0700/0600 modes. This remains a privileged browser-control process, not an OS sandbox or IP-level network egress firewall. Never connect personal or production browser profiles to an untrusted MCP client. Do not use it to bypass CAPTCHAs, bot defenses, rate limits, access controls, account restrictions, or terms of service. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
