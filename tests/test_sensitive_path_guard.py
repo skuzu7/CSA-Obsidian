@@ -1,4 +1,5 @@
 """Security regressions for protecting browser sessions in Git."""
+
 import pytest
 
 from scripts.check_sensitive_paths import is_sensitive_path
